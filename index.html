@@ -355,6 +355,12 @@ a:hover{text-decoration:none;}
 0<e&&(b+="\u3000<a href='javascript:void(0);' onclick='popup(\"r\");'><font color='#32AAFF'>\u2605 R "+e+"\uac1c\n<br/></a>");0<c&&(b+="\u3000<a href='javascript:void(0);' onclick='popup(\"sr\");'><font color='#FF5675'>\u2605\u2605SR "+c+"\uac1c\n<br/></a>");a="\uac00\ucc60 \uacb0\uacfc : \n<br/>"+a+b;$("#text_after").html(a)}function popup_sub(a){a=find_equip(a);a=a.join("\n<br/>");$("#popsub").html(a);$("#popsub").show()}function popup_sub_hide(){$("#popsub").hide()}
 function popup(a){var c=[],e="";"c"==a?(c=c_arr,e="<font color='#6482B9'>\uc77c\ubc18(\u2606C)\n</font><br/>\n<br/>"):"r"==a?(c=r_arr,e="<font color='#32AAFF'>\ub808\uc5b4(\u2605R)\n</font><br/>\n<br/>"):"sr"==a&&(c=sr_arr,e="<font color='#FF5675'>\uc2a4\uc54c(\u2605\u2605SR)\n</font><br/>\n<br/>");a=[];for(var d in c)a[d]="<a href='javascript:void(0);' onMouseOver='popup_sub("+c[d]+");' onMouseOut='popup_sub_hide()'><font color='#FFFFFF'>"+c[d]+"</font></a>";for(d in a)a[d]=a[d].replace("popup_sub(",
 "popup_sub(&#39;"),a[d]=a[d].replace("));","&#39;);");c=a.join("\n<br/>");$("#poptext").html();$("#poptext").html(e+c);$("#pop").show()}$(document).ready(function(){$("#close").click(function(){$("#pop").hide()});$("#popup1").click(function(){$("#pop").show()});$("#pop").hide();$("#popsub").hide()});
+
+		
+		$("#textarea_before").bind('change keyup input paste',function(e){
+				print_result();
+		});
+		
 	</script>
   
   
