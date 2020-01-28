@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>가챠 결과 출력</title>
+<style>
+#pop{
+	width:300px;
+	height:200px;
+	background:#3d3d3d;
+	color:#fff;
+	position:absolute;
+	top:250px;
+	left:100px;
+	text-align:center;
+	border:2px solid #000;
+}
+#popsub{
+	width:350px;
+	height:480px;
+	background:#EEE;
+	color:#000;
+	position:absolute;
+	top:10px;
+	left:450px;
+	text-align:center;
+	border:2px solid #000;
+	padding: 5px 5px 5px 5px;
+}
+
+.skill{
+	font-weight: bold;
+	color: #3232FF;
+}
+
+.equiptitle{
+	font-weight: bold;
+	color: #5A78AF;
+}
+
+.skilltext{
+	color: #7DA5E1;
+
+}
+
+a:link{text-decoration:none;}
+a:visited{text-decoration:none;}
+a:hover{text-decoration:none;}
+</style>	
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+
+	<script>
+	
+		
+		var sr_arr = [
+			"장례 예복 (일상 / 부품 11)",
+			
+			"사랑스러운 공주 예복 (드레스 / 부품 11)"
+		];
+		
+		var r_arr = [
+			"수계정령 의복 (전투 / 부품 10)",
+			
+			"왕립학원 교복 (일상 / 부품 10)",
+			
+			"황실풍 드레스 (드레스 / 부품 10)"
+		];
+		
+		var c_arr = [
+			"붉은 검사 (전투 / 부품 7)",
+			"마법사 지망생 (전투 / 부품 7)",
+			
+			"하얀 외출복 (일상 / 부품 7)",
+			"푸른 외출복 (일상 / 부품 7)",
+			
+			"고전 드레스 (드레스 / 부품 7)"
+		];
+		
+		function find_equip(type){
+			var return_arr = [];
+			
+			if(!type){
+				alert('빔');
+				return false;
+			}
+			
+			if(type.indexOf('붉은 검사') != -1){
+				return_arr = [
+					"<span class='equiptitle'>붉은 검사</span>",
+					"",
+					
+					"셔츠 (방어력 +5)",
+					"바지 (방어력 +5)",
+					"조끼 (방어력 +5)",
+					"양말 (방어력 +5)",
+					"부츠 (방어력 +5)",
+					"모자 (방어력 +5)",
+					"<b>장검 (공격력 +20)</b>",
+					"",
+					
+					"완성시 :",
+					"공격력 +10, 방어력 +5,",
+					"<span class='skill'>하급 검술 (스킬)</span> 획득",
+					
+					"",
+					
+					"착용시 : <span class='skill'>하급 검술 (스킬)</span>",
+					"★필수 : 장검, 조건 부품 3개"
+				];
+			}
+			
+			
+			if(type.indexOf('마법사 지망생') != -1){
+				return_arr = [
+					"<span class='equiptitle'>마법사 지망생</span>",
+					"",
+					
+					"셔츠 (마법방어력 +5)",
+					"반바지 (마법방어력 +5)",
+					"양말 (마법방어력 +5)",
+					"부츠 (마법방어력 +5)",
+					"<b>로브 (마법공격력 +20)</b>",
+					"장갑 (마법방어력 +5)",
+					"모자 (마법방어력 +5)",
+					"",
+					
+					"완성시 :",
+					"마법공격력 +10, 마법방어력 +5,",
+					"<span class='skill'>하급 마술 (스킬)</span> 획득",
+					
+					"",
+					
+					"착용시 : <span class='skill'>하급 마술 (스킬)</span>",
+					"★필수 : 로브, 조건 부품 3개"
+				];
+			}
+			
+			if(type.indexOf('수계정령 의복') != -1){
+				return_arr = [
+					"<span class='equiptitle'>수계정령 의복</span>",
+					"",
+					
+					"<b>원피스 (마법공격력 +40)</b>",
+					"신발 (마법방어력 +10)",
+					"다리장식1 (마법방어력 +10)",
+					"다리장식2 (마법방어력 +10)",
+					"팔찌1 (마법방어력 +10)",
+					"팔찌2 (마법방어력 +10)",
+					"귀걸이 (마법방어력 +10)",
+					"머리핀 (마법방어력 +10)",
+					"펜던트 (마법방어력 +10)",
+					"허리띠 (마법방어력 +10)",
+					"",
+					
+					"완성시 :",
+					"마법공격력 +20, 마법방어력 +10,",
+					"<span class='skill'>물의 중급 정령술 (스킬)</span> 획득",
+					
+					"",
+					
+					"착용시 : <span class='skill'>물의 중급 정령술 (스킬)</span>",
+					"조건 부품 5개"
+				];
+			}
+			
+			if(type.indexOf('하얀 외출복') != -1){
+				return_arr = [
+					"<span class='equiptitle'>하얀 외출복</span>",
+					"",
+					
+					"<b>원피스 (청순함 +20)</b>",
+					"장갑 (소박함 +5)",
+					"리본 (소박함 +5)",
+					"양말 (소박함 +5)",
+					"진주귀걸이 (소박함 +5)",
+					"신발 (소박함 +5)",
+					"양산 (소박함 +5)",
+					"",
+					
+					"완성시 :",
+					"청순함 +10, 소박함 +5"
+				];
+			}
+			
+			if(type.indexOf('푸른 외출복') != -1){
+				return_arr = [
+					"<span class='equiptitle'>푸른 외출복</span>",
+					"",
+					
+					"<b>셔츠 (성숙함 +10)</b>",
+					"<b>스커트 (성숙함 +10)</b>",
+					"외투 (활발함 +5)",
+					"스타킹 (활발함 +5)",
+					"신발 (활발함 +5)",
+					"헤어핀 (활발함 +5)",
+					"리본목걸이 (활발함 +5)",
+					"",
+					
+					"완성시 :",
+					"성숙함 +10, 활발함 +5"
+				];
+			}
+			
+			if(type.indexOf('왕립학원 교복') != -1){
+				return_arr = [
+					"<span class='equiptitle'>왕립학원 교복</span>",
+					"",
+					
+					"<b>셔츠 (고귀함 +20)</b>",
+					"<b>스커트 (고귀함 +20)</b>",					
+					"조끼 (소박함 +10)",
+					"양말 (소박함 +10)",
+					"부츠 (소박함 +10)",
+					"펜던트 (소박함 +10)",
+					"리본 (소박함 +10)",
+					"베레모 (소박함 +10)",
+					"가방 (소박함 +10)",
+					"반지 (소박함 +10)",
+					"",
+					
+					"완성시 :",
+					"고귀함 +20, 소박함 +10",
+					
+					"",
+					
+					"착용시 : <span class='skill'>빠른 학습력 (스킬)</span>",
+					"<span class='skilltext'>(패시브. 일반 기술 습득력 두배)</span>",
+					"조건 부품 4개"
+				];
+			}
+			
+			if(type.indexOf('장례 예복') != -1){
+				return_arr = [
+					"<span class='equiptitle'>장례 예복</span>",
+					"",
+					
+					"<b>원피스 (성숙함 +40)</b>",
+					"스타킹 (섹시함 +15)",
+					"신발 (섹시함 +15)",
+					"장갑 (섹시함 +15)",
+					"흑요석 목걸이 (섹시함 +15)",
+					"흑진주 귀걸이 (섹시함 +15)",
+					"비단 허리띠 (섹시함 +15)",
+					"반지 (섹시함 +15)",
+					"반지2 (섹시함 +15)",
+					"베일 (섹시함 +15)",
+					"머리장식 (섹시함 +15)",
+					"",
+					
+					"완성시 :",
+					"성숙함 +40, 섹시함 +15,",
+					"<span class='skill'>영안 (스킬)</span> 획득",
+					"<span class='skilltext'>(패시브. 귀신 등의 영적 존재 인지 가능)</span>",
+					
+					"",
+					
+					"착용시 : <span class='skill'>우울한 유혹 (스킬)</span>",
+					"<span class='skilltext'>(유혹 커맨드 성공율 10% 추가)</span>",
+					"조건 부품 8개"
+				];
+			}
+			
+			if(type.indexOf('고전 드레스') != -1){
+				return_arr = [
+					"<span class='equiptitle'>고전 드레스</span>",
+					"",
+					
+					"<b>원피스 (화려함 +20)</b>",
+					"스타킹 (고귀함 +5)",
+					"하이힐 (고귀함 +5)",
+					"장갑 (고귀함 +5)",
+					"부채 (고귀함 +5)",
+					"진주목걸이 (고귀함 +5)",
+					"머리 장식 (고귀함 +5)",
+					"",
+					
+					"완성시 :",
+					"화려함 +10, 고귀함 +5,",
+					"<span class='skill'>하급 무용 (스킬)</span> 획득",
+					
+					"",
+					
+					"착용시 : <span class='skill'>하급 무용 (스킬)</span>",
+					"조건 부품 4개"
+				];
+			}
+			
+			if(type.indexOf('황실풍 드레스') != -1){
+				return_arr = [
+					"<span class='equiptitle'>황실풍 드레스</span>",
+					"",
+					
+					"<b>원피스 (고귀함 +40)</b>",
+					"스타킹 (화려함 +10)",
+					"겉옷 (화려함 +10)",
+					"하이힐 (화려함 +10)",
+					"장갑 (화려함 +10)",
+					"부채 (화려함 +10)",
+					"보석목걸이 (화려함 +10)",
+					"크라운 (화려함 +10)",
+					"팔찌1 (화려함 +10)",
+					"팔찌2 (화려함 +10)",					
+					"",
+					
+					"완성시 :",
+					"고귀함 +20, 화려함 +10,",
+					"<span class='skill'>푸른피의 위엄 (스킬)</span> 획득",
+					
+					"",
+					
+					"착용시 : <span class='skill'>푸른피의 위엄 (스킬)</span>",
+					"<span class='skilltext'>(패시브. 말과 행동의 정당성을 느끼게 해줌)</span>",
+					"조건 부품 5개"
+				];
+			}
+			
+			if(type.indexOf('사랑스러운 공주 예복') != -1){
+				return_arr = [
+					"<span class='equiptitle'>사랑스러운 공주 예복</span>",
+					"",
+					
+					"<b>원피스 (귀여움 +40)</b>",
+					"스타킹 (화려함 +15)",
+					"비단단망토 (화려함 +15)",
+					"하이힐 (화려함 +15)",
+					"장갑 (화려함 +15)",
+					"부채 (화려함 +15)",
+					"목걸이 (화려함 +15)",
+					"크라운 (화려함 +15)",
+					"팔찌1 (화려함 +15)",
+					"팔찌2 (화려함 +15)",
+					"귀걸이 (화려함 +15)",
+					"",
+					
+					"완성시 :",
+					"귀여움 +40, 화려함 +15,",
+					"<span class='skill'>중급 예법 (스킬)</span> 획득",
+					
+					"",
+					
+					"착용시 : <span class='skill'>사랑스런 애교 (스킬)</span>",
+					"<span class='skilltext'>(애교 커맨드 성공율 10% 추가)</span>",
+					"<span class='skill'>중급 예법 (스킬)</span>",
+					"<span class='skilltext'>(패시브. 백작급 주최 연회에서 트집x)</span>",
+					"조건 부품 8개"
+				];
+			}
+				
+			return return_arr;
+			
+		}
+		
+		function print_result(){var a=document.getElementById("textarea_before").value;-1!=a.indexOf("d100")&&(a=a.split("d100")[1]);a=a.split(" = ")[0].split(" + ");var c=0,e=0,d=0;for(b in a)a[b]=a[b].replace("\r",""),96<=a[b]?(a[b]+=" \u2605\u2605 SR",c++):81<=a[b]?(a[b]+=" \u2605 R",e++):(a[b]+=" \u2606 C",d++);a=a.join("\n<br/>");var b=" \n<br/> ----------------------\n<br/>";0<d&&(b+="\u3000<a href='javascript:void(0);' onclick='popup(\"c\");'><font color='#6482B9'>\u2606 C "+d+"\uac1c\n<br/></a>");
+0<e&&(b+="\u3000<a href='javascript:void(0);' onclick='popup(\"r\");'><font color='#32AAFF'>\u2605 R "+e+"\uac1c\n<br/></a>");0<c&&(b+="\u3000<a href='javascript:void(0);' onclick='popup(\"sr\");'><font color='#FF5675'>\u2605\u2605SR "+c+"\uac1c\n<br/></a>");a="\uac00\ucc60 \uacb0\uacfc : \n<br/>"+a+b;$("#text_after").html(a)}function popup_sub(a){a=find_equip(a);a=a.join("\n<br/>");$("#popsub").html(a);$("#popsub").show()}function popup_sub_hide(){$("#popsub").hide()}
+function popup(a){var c=[],e="";"c"==a?(c=c_arr,e="<font color='#6482B9'>\uc77c\ubc18(\u2606C)\n</font><br/>\n<br/>"):"r"==a?(c=r_arr,e="<font color='#32AAFF'>\ub808\uc5b4(\u2605R)\n</font><br/>\n<br/>"):"sr"==a&&(c=sr_arr,e="<font color='#FF5675'>\uc2a4\uc54c(\u2605\u2605SR)\n</font><br/>\n<br/>");a=[];for(var d in c)a[d]="<a href='javascript:void(0);' onMouseOver='popup_sub("+c[d]+");' onMouseOut='popup_sub_hide()'><font color='#FFFFFF'>"+c[d]+"</font></a>";for(d in a)a[d]=a[d].replace("popup_sub(",
+"popup_sub(&#39;"),a[d]=a[d].replace("));","&#39;);");c=a.join("\n<br/>");$("#poptext").html();$("#poptext").html(e+c);$("#pop").show()}$(document).ready(function(){$("#close").click(function(){$("#pop").hide()});$("#popup1").click(function(){$("#pop").show()});$("#pop").hide();$("#popsub").hide()});
+	</script>
+  
+  
+</head>
+<body>
+
+<br />주사위결과 :&nbsp;<br /><textarea id="textarea_before" style="height: 50px; width: 380px;" onkeyup=print_result();></textarea>
+
+<br /><br />
+
+
+<div id="text_after" style="height: 350px; width: 380px; background-color: #eeeeee; color: black;">
+
+</div>
+
+
+<div id="pop">
+	<div id="poptext" style="hegith:370px;">
+		
+		
+	</div>
+		<br>
+	<div id="close" style="width:100px; margin:auto;"> <b>&gt; close &lt; </b></div>
+</div>
+
+
+<div id="popsub">
+	
+</div>
+
+</body>
+</html>
