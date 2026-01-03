@@ -1489,6 +1489,8 @@
   },
   "image": {
     "title.jpg": "https://unidsaa.github.io/web/title.png",
-    "back2.jpg": "https://unidsaa.github.io/web/back2.png"
+    "back2.jpg": "https://unidsaa.github.io/web/back2.png",
+	  
+        "button_start.png": "https://placehold.co/360x100/FF0000/FFFFFF/png?text=GAME+START"
   }
 }
