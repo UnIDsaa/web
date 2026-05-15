@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "default": "ils",
+  "styles": {
+    "default": {
+      "promptPrefix": "",
+      "negativePrefix": ""
+    },
+    "illustrious": {
+      "promptPrefix": "masterpiece, best quality, ultra detailed, illustrious,",
+      "negativePrefix": "lowres, bad anatomy, bad hands, worst quality, blurry, ugly,"
+    },
+    "anime-soft": {
+      "promptPrefix": "masterpiece, best quality, soft anime style, pastel colors, detailed,",
+      "negativePrefix": "lowres, worst quality, bad anatomy, realistic, photo,"
+    },
+    "ils": {
+      "promptPrefix": "1boy, [[[wengwengchim]]], siy (shengxiu760722), chengzhineixihuanxiaogou, almostghost, utsuhostoria, 0.5::na_tarapisu153 ::, naoko (naonocoto), 2::galbae ::, veryaesthetic, best quality, masterpiece, highres, incredibly absurdres, beautiful lighting, soft light, pov adoring, , very aesthetic, masterpiece, no text,",
+      "negativePrefix": "blurry, lowres, error, film grain, scan artifacts, worst quality, bad quality, jpeg artifacts, very displeasing, chromatic aberration, multiple views, logo, too many watermarks, sfw, censored, gore, monster, {{{{noise, extra head, extra body, worst quality, bad quality, low quality, very displeasing, normal quality, displeasing}}}}, {{{{{{bad hands, bad eyes, bad pupils}}}}}}, text, fewer digits, cropped, JPEG artifacts, signature, duplicate, cropped, error, watermark, username, artist name, fat, extra arms, extra digits, extra legs, extra toes, deformed, long neck, bad feet, unfinished, chromatic aberration, animal,"
+    }
+  }
+}
