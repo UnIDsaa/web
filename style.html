@@ -1001,6 +1001,25 @@ select { cursor: pointer; }
     <button class="btn btn-primary" id="btnSaveSettings" style="width:100%;justify-content:center;">
       설정 저장
     </button>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">설정 내보내기 / 가져오기</span></div>
+      <div class="card-body">
+        <div class="text-small" style="color:var(--text3)">
+          PAT 포함 전체 설정을 JSON 파일로 내보내거나 가져옵니다.<br>
+          파일은 안전한 곳에 보관하세요.
+        </div>
+        <div class="flex gap-8">
+          <button class="btn btn-secondary btn-sm" id="btnExportCfg" style="flex:1;justify-content:center;">⬇ 내보내기</button>
+          <label class="btn btn-secondary btn-sm" style="flex:1;justify-content:center;cursor:pointer;">
+            ⬆ 가져오기
+            <input type="file" accept=".json" id="importCfgInput" style="display:none">
+          </label>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1158,6 +1177,38 @@ function bindUI() {
     saveCfg();
     closeOverlay('overlay');
     toast('설정 저장됨', 'success');
+  };
+
+  // 설정 내보내기
+  document.getElementById('btnExportCfg').onclick = () => {
+    saveCfg();  // 현재 폼 값 먼저 반영
+    const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'style-manager-config.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('설정 내보내기 완료', 'success');
+  };
+
+  // 설정 가져오기
+  document.getElementById('importCfgInput').onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const imported = JSON.parse(ev.target.result);
+        cfg = { ...cfg, ...imported };
+        localStorage.setItem('sm-cfg', JSON.stringify(cfg));
+        loadCfg();
+        toast('설정 가져오기 완료', 'success');
+      } catch {
+        toast('JSON 파싱 실패 — 올바른 설정 파일인지 확인해주세요', 'error');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   document.getElementById('btnLoad').onclick = loadFromGitHub;
@@ -1400,12 +1451,16 @@ function renderSidebar() {
     const s = styles[key];
     const label = s.meta?.label || '';
     const isDefault = key === data.default;
-    const imgSrc = getPreviewUrl(key, s);
+    const { primary, fallback } = getPreviewUrlWithFallback(key, s);
+
+    const onerrorAttr = fallback
+      ? `onerror="this.src='${fallback}';this.onerror=function(){this.parentElement.textContent='🖼'}"`
+      : `onerror="this.parentElement.textContent='🖼'"`;
 
     return `
       <div class="style-item ${key === selectedKey ? 'active' : ''}" data-key="${key}" onclick="selectStyle('${key}')">
         <div class="style-thumb">
-          ${imgSrc ? `<img src="${imgSrc}" onerror="this.parentElement.textContent='🖼'">` : '🖼'}
+          ${primary ? `<img src="${primary}" ${onerrorAttr}>` : '🖼'}
         </div>
         <div class="style-item-info">
           <div class="style-item-key">${key}</div>
@@ -1417,11 +1472,28 @@ function renderSidebar() {
   }).join('');
 }
 
-function getPreviewUrl(key, style) {
+function getPreviewUrl(key, style, fileName) {
   if (!cfg.owner || !cfg.repo) return null;
-  const fileName = style.meta?.previewImage || (key + '.png');
+  const name = fileName || style.meta?.previewImage || (key + '.png');
   const dir = cfg.imgDir ? cfg.imgDir.replace(/\/$/, '') + '/' : '';
-  return `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch}/${dir}${fileName}`;
+  return `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch}/${dir}${name}`;
+}
+
+// previewImage 명시 여부 관계없이 {key}.png 자동 fallback URL도 생성
+function getPreviewUrlWithFallback(key, style) {
+  if (!cfg.owner || !cfg.repo) return { primary: null, fallback: null };
+  const dir = cfg.imgDir ? cfg.imgDir.replace(/\/$/, '') + '/' : '';
+  const base = `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch}/${dir}`;
+  const explicit = style.meta?.previewImage;
+  if (explicit) {
+    // 명시된 파일명 → 실패 시 {key}.png 시도
+    return {
+      primary:  base + explicit,
+      fallback: explicit !== key + '.png' ? base + key + '.png' : null,
+    };
+  }
+  // 명시 없음 → {key}.png 바로 시도
+  return { primary: base + key + '.png', fallback: null };
 }
 
 function selectStyle(key) {
@@ -1469,15 +1541,18 @@ function renderEditor(key) {
   document.getElementById('fUseIncomingNeg').checked = !!s.useIncomingNegative;
 
   // Preview image
-  const previewUrl = getPreviewUrl(key, s);
-  renderPreviewImg(previewUrl, s.meta?.previewImage);
+  const { primary, fallback } = getPreviewUrlWithFallback(key, s);
+  renderPreviewImg(primary, fallback, s.meta?.previewImage);
 }
 
-function renderPreviewImg(url, filename) {
+function renderPreviewImg(url, fallbackUrl, filename) {
   const wrap = document.getElementById('previewImgWrap');
   const nameEl = document.getElementById('previewFilename');
   if (url) {
-    wrap.innerHTML = `<img src="${url}" onerror="this.parentElement.textContent='🖼'">`;
+    const onerror = fallbackUrl
+      ? `this.src='${fallbackUrl}';this.onerror=function(){this.parentElement.textContent='🖼'}`
+      : `this.parentElement.textContent='🖼'`;
+    wrap.innerHTML = `<img src="${url}" onerror="${onerror}">`;
     nameEl.textContent = filename || '(자동: {키}.png)';
   } else {
     wrap.textContent = '🖼';
