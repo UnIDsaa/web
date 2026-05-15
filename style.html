@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Style Manager — NAI Proxy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   CSS VARIABLES — THEMES
+═══════════════════════════════════════════════════════════════════ */
+:root {
+  --transition: 0.2s ease;
+}
+
+[data-theme="dark"] {
+  --bg:          #0e0f14;
+  --bg2:         #161820;
+  --bg3:         #1e2028;
+  --border:      #2a2c38;
+  --border2:     #363848;
+  --text:        #e8eaf0;
+  --text2:       #9699b0;
+  --text3:       #5a5d78;
+  --accent:      #7c83f5;
+  --accent-dim:  #4a4f9e;
+  --accent-glow: rgba(124,131,245,0.15);
+  --danger:      #f56e6e;
+  --danger-dim:  #7a2525;
+  --success:     #6ef59a;
+  --warning:     #f5c96e;
+  --tag-bg:      #252736;
+  --input-bg:    #13141c;
+  --shadow:      0 4px 24px rgba(0,0,0,0.5);
+  --shadow-sm:   0 2px 8px rgba(0,0,0,0.3);
+}
+
+[data-theme="light"] {
+  --bg:          #f5f6fa;
+  --bg2:         #ffffff;
+  --bg3:         #eef0f8;
+  --border:      #d8dae8;
+  --border2:     #c2c5dc;
+  --text:        #1a1c2e;
+  --text2:       #5a5d78;
+  --text3:       #9699b0;
+  --accent:      #5058d8;
+  --accent-dim:  #c5c8f8;
+  --accent-glow: rgba(80,88,216,0.10);
+  --danger:      #d94040;
+  --danger-dim:  #fde8e8;
+  --success:     #1a8f46;
+  --warning:     #c47a00;
+  --tag-bg:      #eef0f8;
+  --input-bg:    #f8f9ff;
+  --shadow:      0 4px 24px rgba(0,0,0,0.10);
+  --shadow-sm:   0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+  transition: background var(--transition), color var(--transition);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════════════════════════ */
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+
+.topbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+
+.topbar-logo {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.topbar-logo span { color: var(--text3); }
+
+.topbar-spacer { flex: 1; }
+
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+.main-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  height: calc(100vh - 56px);
+  overflow: hidden;
+}
+
+.sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  flex: 1;
+}
+
+.style-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.style-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition);
+  margin-bottom: 2px;
+}
+
+.style-item:hover {
+  background: var(--bg3);
+  border-color: var(--border);
+}
+
+.style-item.active {
+  background: var(--accent-glow);
+  border-color: var(--accent-dim);
+}
+
+.style-item.active .style-item-key {
+  color: var(--accent);
+}
+
+.style-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text3);
+  font-size: 16px;
+}
+
+.style-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.style-item-info { flex: 1; min-width: 0; }
+
+.style-item-key {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.style-item-label {
+  font-size: 11px;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.default-badge {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--accent-glow);
+  color: var(--accent);
+  border: 1px solid var(--accent-dim);
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   EDITOR PANEL
+═══════════════════════════════════════════════════════════════════ */
+.editor-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.editor-header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.editor-key-display {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.editor-key-display small {
+  color: var(--text3);
+  font-size: 12px;
+  margin-left: 8px;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 400;
+}
+
+.editor-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CARDS / SECTIONS
+═══════════════════════════════════════════════════════════════════ */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg3);
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text2);
+  flex: 1;
+}
+
+.card-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   FORM ELEMENTS
+═══════════════════════════════════════════════════════════════════ */
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.field-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  letter-spacing: 0.04em;
+}
+
+label .required { color: var(--accent); margin-left: 2px; }
+label .hint { color: var(--text3); font-weight: 400; margin-left: 4px; }
+
+input[type="text"],
+input[type="url"],
+input[type="number"],
+input[type="password"],
+select,
+textarea {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+  width: 100%;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+textarea {
+  resize: vertical;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  min-height: 90px;
+}
+
+select { cursor: pointer; }
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+
+.checkbox-row:hover { border-color: var(--accent-dim); }
+
+.checkbox-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.checkbox-row label {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0;
+}
+
+.checkbox-row .check-hint {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+/* override section — collapsible */
+.override-section {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.override-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.12);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text2);
+  border-color: var(--border);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg3);
+  color: var(--text);
+  border-color: var(--border2);
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger-dim);
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--danger-dim);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text2);
+  border-color: transparent;
+  padding: 7px 10px;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+.btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 6px; }
+.btn-icon { padding: 7px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   PREVIEW IMAGE
+═══════════════════════════════════════════════════════════════════ */
+.preview-area {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.preview-img-wrap {
+  width: 120px;
+  height: 160px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text3);
+  font-size: 28px;
+  position: relative;
+}
+
+.preview-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.preview-upload-info { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+
+.preview-filename {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  word-break: break-all;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SETTINGS PANEL (modal-ish drawer)
+═══════════════════════════════════════════════════════════════════ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  display: none;
+  backdrop-filter: blur(2px);
+}
+.overlay.open { display: flex; align-items: flex-start; justify-content: flex-end; }
+
+.settings-drawer {
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  width: 420px;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: var(--shadow);
+  animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(24px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.drawer-title {
+  font-size: 15px;
+  font-weight: 600;
+  flex: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   STATUS / TOAST
+═══════════════════════════════════════════════════════════════════ */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+  animation: toastIn 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 360px;
+}
+
+@keyframes toastIn {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+
+.toast-success { background: var(--success); color: #fff; }
+.toast-error   { background: var(--danger);  color: #fff; }
+.toast-info    { background: var(--bg3);     color: var(--text); border: 1px solid var(--border); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════════════════════════════════ */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text3);
+  text-align: center;
+  padding: 40px;
+}
+.empty-state .icon { font-size: 48px; opacity: 0.4; }
+.empty-state p { font-size: 14px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   MISC
+═══════════════════════════════════════════════════════════════════ */
+.version-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 2px 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text3);
+}
+
+.health-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text3);
+}
+.health-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text3);
+}
+.health-dot.ok     { background: var(--success); }
+.health-dot.error  { background: var(--danger); }
+.health-dot.pulse  { animation: pulse 1.2s infinite; background: var(--warning); }
+@keyframes pulse {
+  0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--tag-bg);
+  color: var(--text3);
+  border: 1px solid var(--border);
+}
+
+.worker-defaults-info {
+  font-size: 12px;
+  color: var(--text3);
+  padding: 8px 12px;
+  background: var(--bg3);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+}
+
+.scrollable { overflow-y: auto; }
+.flex       { display: flex; }
+.gap-8      { gap: 8px; }
+.gap-12     { gap: 12px; }
+.ml-auto    { margin-left: auto; }
+.mt-4       { margin-top: 4px; }
+.text-small { font-size: 11px; color: var(--text3); }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body data-theme="dark">
+
+<div class="app">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-logo">✦ style<span>/</span>manager</div>
+    <div class="version-badge" id="topVersionBadge">v—</div>
+    <div class="health-indicator" id="healthIndicator">
+      <div class="health-dot" id="healthDot"></div>
+      <span id="healthText">미연결</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+      <button class="btn btn-secondary btn-sm" id="btnLoad">
+        ⬇ 불러오기
+      </button>
+      <button class="btn btn-primary btn-sm" id="btnSave" disabled>
+        ⬆ GitHub 저장
+      </button>
+      <button class="btn btn-ghost btn-icon" id="btnTheme" title="테마 전환">🌙</button>
+      <button class="btn btn-ghost btn-icon" id="btnSettings" title="설정">⚙</button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <div class="main-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">스타일 목록</span>
+        <button class="btn btn-secondary btn-sm" id="btnAddStyle">+ 추가</button>
+      </div>
+      <div class="style-list" id="styleList">
+        <div class="empty-state" style="padding:32px 16px">
+          <div class="icon">🎨</div>
+          <p>설정 후 불러오기를 해주세요</p>
+        </div>
+      </div>
+
+      <!-- Worker Defaults (sidebar bottom) -->
+      <div style="border-top:1px solid var(--border); padding:12px;">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;">
+          Worker 전역 기본값
+        </div>
+        <div class="worker-defaults-info" id="workerDefaultsInfo" style="line-height:1.8;font-size:11px;">
+          —
+        </div>
+        <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:8px;justify-content:center;" id="btnEditWorkerDefaults">
+          ✏ 전역값 편집
+        </button>
+      </div>
+    </aside>
+
+    <!-- EDITOR -->
+    <main class="editor-panel" id="editorPanel">
+      <div class="empty-state" id="editorEmpty">
+        <div class="icon">←</div>
+        <p>왼쪽에서 스타일을 선택하거나<br>새로 추가하세요</p>
+      </div>
+      <div id="editorForm" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+        <div class="editor-header">
+          <div class="editor-key-display" id="editorKeyDisplay">—</div>
+          <span class="default-badge" id="editorDefaultBadge" style="display:none">기본값</span>
+          <div class="ml-auto flex gap-8">
+            <button class="btn btn-secondary btn-sm" id="btnSetDefault">기본값으로 설정</button>
+            <button class="btn btn-danger btn-sm" id="btnDeleteStyle">삭제</button>
+          </div>
+        </div>
+        <div class="editor-content" id="editorContent">
+
+          <!-- 기본 정보 -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">기본 정보</span>
+            </div>
+            <div class="card-body">
+              <div class="field-row">
+                <div class="field">
+                  <label>스타일 키 <span class="required">*</span> <span class="hint">영소문자, -, _</span></label>
+                  <input type="text" id="fKey" placeholder="예: anime-soft">
+                </div>
+                <div class="field">
+                  <label>표시 이름 <span class="hint">선택</span></label>
+                  <input type="text" id="fLabel" placeholder="예: 소프트 애니 스타일">
+                </div>
+              </div>
+              <div class="field">
+                <label>출처 URL <span class="hint">선택</span></label>
+                <input type="url" id="fSourceUrl" placeholder="https://...">
+              </div>
+              <div class="field">
+                <label>비고 <span class="hint">선택</span></label>
+                <input type="text" id="fNotes" placeholder="메모...">
+              </div>
+            </div>
+          </div>
+
+          <!-- 프롬프트 -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">프롬프트</span>
+              <span class="tag">Worker 사용</span>
+            </div>
+            <div class="card-body">
+              <div class="field">
+                <label>긍정 프롬프트 Prefix <span class="required">*</span></label>
+                <textarea id="fPromptPrefix" rows="4" placeholder="masterpiece, best quality, ..."></textarea>
+              </div>
+              <div class="field">
+                <label>네거티브 Prefix <span class="hint">{{{{ }}}}, :: 포함 가능 — Worker가 자동 sanitize</span></label>
+                <textarea id="fNegPrefix" rows="3" placeholder="lowres, bad anatomy, ..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- 파라미터 오버라이드 -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">파라미터 오버라이드</span>
+              <span class="tag">Worker 사용</span>
+            </div>
+            <div class="card-body" style="gap:10px">
+              <div class="checkbox-row" id="overrideToggleRow">
+                <input type="checkbox" id="fOverride">
+                <label for="fOverride">
+                  이 스타일의 파라미터로 Worker 전역값 덮어쓰기
+                  <span class="check-hint">— 체크 시 아래 값이 적용됨</span>
+                </label>
+              </div>
+              <div class="override-section" id="overrideBody" style="display:none">
+                <div class="override-body">
+                  <div class="field-row-3">
+                    <div class="field">
+                      <label>Steps</label>
+                      <input type="number" id="fSteps" min="1" max="50" placeholder="28">
+                    </div>
+                    <div class="field">
+                      <label>CFG Scale</label>
+                      <input type="number" id="fScale" min="0" max="10" step="0.5" placeholder="5.0">
+                    </div>
+                    <div class="field">
+                      <label>Rescale</label>
+                      <input type="number" id="fRescale" min="0" max="1" step="0.05" placeholder="0.0">
+                    </div>
+                  </div>
+                  <div class="field-row">
+                    <div class="field">
+                      <label>Width</label>
+                      <input type="number" id="fWidth" min="64" max="2048" step="64" placeholder="832">
+                    </div>
+                    <div class="field">
+                      <label>Height</label>
+                      <input type="number" id="fHeight" min="64" max="2048" step="64" placeholder="1216">
+                    </div>
+                  </div>
+                  <div class="field-row">
+                    <div class="field">
+                      <label>Sampler</label>
+                      <select id="fSampler">
+                        <option value="">전역값 사용</option>
+                        <option value="k_euler_ancestral">Euler Ancestral</option>
+                        <option value="k_euler">Euler</option>
+                        <option value="k_dpmpp_2s_ancestral">DPM++ 2S Ancestral</option>
+                        <option value="k_dpmpp_2m_sde">DPM++ 2M SDE</option>
+                        <option value="k_dpmpp_2m">DPM++ 2M</option>
+                        <option value="k_dpmpp_sde">DPM++ SDE</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label>Scheduler</label>
+                      <select id="fScheduler">
+                        <option value="">전역값 사용</option>
+                        <option value="karras">Karras</option>
+                        <option value="native">Native</option>
+                        <option value="exponential">Exponential</option>
+                        <option value="polyexponential">Polyexponential</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="checkbox-row">
+                    <input type="checkbox" id="fSmea">
+                    <label for="fSmea">SMEA</label>
+                  </div>
+                  <div class="checkbox-row">
+                    <input type="checkbox" id="fSmeaDyn">
+                    <label for="fSmeaDyn">SMEA DYN</label>
+                  </div>
+                  <div class="checkbox-row">
+                    <input type="checkbox" id="fUseIncomingNeg">
+                    <label for="fUseIncomingNeg">
+                      수신 네거티브 병합
+                      <span class="check-hint">— 체크 시 Marinara 입력 네거티브도 사용</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 미리보기 이미지 -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">미리보기 이미지</span>
+            </div>
+            <div class="card-body">
+              <div class="preview-area">
+                <div class="preview-img-wrap" id="previewImgWrap">🖼</div>
+                <div class="preview-upload-info">
+                  <div class="text-small">
+                    같은 GitHub 레포에 <code style="font-family:'DM Mono',monospace;font-size:10px;background:var(--bg3);padding:1px 5px;border-radius:3px;">{스타일키}.png</code> 파일이 있으면<br>
+                    자동으로 미리보기가 표시됩니다.
+                  </div>
+                  <div class="preview-filename" id="previewFilename">파일 미지정</div>
+                  <div class="flex gap-8" style="flex-wrap:wrap">
+                    <label class="btn btn-secondary btn-sm" style="cursor:pointer">
+                      📁 이미지 업로드
+                      <input type="file" accept="image/*" style="display:none" id="imgUploadInput">
+                    </label>
+                    <button class="btn btn-ghost btn-sm" id="btnClearImage">✕ 제거</button>
+                  </div>
+                  <div class="text-small mt-4" id="uploadStatus"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 액션 -->
+          <div style="display:flex;gap:8px;justify-content:flex-end;padding-bottom:24px;">
+            <button class="btn btn-secondary" id="btnRevert">되돌리기</button>
+            <button class="btn btn-primary" id="btnApply">✓ 변경 적용</button>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<!-- SETTINGS DRAWER -->
+<div class="overlay" id="overlay">
+  <div class="settings-drawer" id="settingsDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title">⚙ 설정</div>
+      <button class="btn btn-ghost btn-icon" id="btnCloseSettings">✕</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">GitHub 연결</span></div>
+      <div class="card-body">
+        <div class="field">
+          <label>Personal Access Token <span class="required">*</span></label>
+          <input type="password" id="sPAT" placeholder="ghp_...">
+          <div class="text-small mt-4">repo 권한 필요. localStorage에만 저장됩니다.</div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Owner <span class="required">*</span></label>
+            <input type="text" id="sOwner" placeholder="username">
+          </div>
+          <div class="field">
+            <label>Repo <span class="required">*</span></label>
+            <input type="text" id="sRepo" placeholder="repo-name">
+          </div>
+        </div>
+        <div class="field">
+          <label>파일 경로 <span class="required">*</span></label>
+          <input type="text" id="sFilePath" placeholder="styles.json">
+        </div>
+        <div class="field">
+          <label>Branch</label>
+          <input type="text" id="sBranch" placeholder="main">
+        </div>
+        <div class="field">
+          <label>이미지 폴더 경로 <span class="hint">선택 — 비우면 루트</span></label>
+          <input type="text" id="sImgDir" placeholder="previews/">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Worker 헬스체크</span></div>
+      <div class="card-body">
+        <div class="field">
+          <label>Worker URL</label>
+          <input type="url" id="sWorkerUrl" placeholder="https://xxx.workers.dev">
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btnCheckHealth">연결 확인</button>
+        <div id="healthResult" class="text-small mt-4"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">버전 관리</span></div>
+      <div class="card-body">
+        <div class="field">
+          <label>버전 증가 방식</label>
+          <select id="sVersionMode">
+            <option value="semver">Semver patch (1.0.0 → 1.0.1)</option>
+            <option value="timestamp">타임스탬프 (2026-05-15T12:34)</option>
+            <option value="both" selected>둘 다 (semver + updatedAt 타임스탬프)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btnSaveSettings" style="width:100%;justify-content:center;">
+      설정 저장
+    </button>
+  </div>
+</div>
+
+<!-- Worker Defaults Modal -->
+<div class="overlay" id="wdOverlay">
+  <div class="settings-drawer" id="wdDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title">Worker 전역 기본값 편집</div>
+      <button class="btn btn-ghost btn-icon" id="btnCloseWd">✕</button>
+    </div>
+    <div class="text-small" style="color:var(--text3)">
+      styles.json의 <code style="font-family:'DM Mono',monospace;background:var(--bg3);padding:1px 5px;border-radius:3px;">workerDefaults</code> 섹션으로 저장됩니다.<br>
+      Worker가 이 값을 읽어 하드코딩 DEFAULTS를 대체합니다.
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="field-row-3">
+          <div class="field">
+            <label>Steps</label>
+            <input type="number" id="wdSteps" min="1" max="50" placeholder="28">
+          </div>
+          <div class="field">
+            <label>CFG Scale</label>
+            <input type="number" id="wdScale" step="0.5" placeholder="5.0">
+          </div>
+          <div class="field">
+            <label>Rescale</label>
+            <input type="number" id="wdRescale" step="0.05" min="0" max="1" placeholder="0.0">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Width</label>
+            <input type="number" id="wdWidth" step="64" placeholder="832">
+          </div>
+          <div class="field">
+            <label>Height</label>
+            <input type="number" id="wdHeight" step="64" placeholder="1216">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Sampler</label>
+            <select id="wdSampler">
+              <option value="k_euler_ancestral">Euler Ancestral</option>
+              <option value="k_euler">Euler</option>
+              <option value="k_dpmpp_2s_ancestral">DPM++ 2S Ancestral</option>
+              <option value="k_dpmpp_2m_sde">DPM++ 2M SDE</option>
+              <option value="k_dpmpp_2m">DPM++ 2M</option>
+              <option value="k_dpmpp_sde">DPM++ SDE</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Scheduler</label>
+            <select id="wdScheduler">
+              <option value="karras">Karras</option>
+              <option value="native">Native</option>
+              <option value="exponential">Exponential</option>
+              <option value="polyexponential">Polyexponential</option>
+            </select>
+          </div>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="wdUseIncomingNeg">
+          <label for="wdUseIncomingNeg">
+            수신 네거티브 병합 (useIncomingNegative)
+          </label>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="btnSaveWd" style="width:100%;justify-content:center;">
+      전역값 적용 (미저장 — 상단 GitHub 저장 후 반영)
+    </button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════════
+let cfg = {
+  pat: '', owner: '', repo: '', filePath: 'styles.json',
+  branch: 'main', imgDir: '', workerUrl: '', versionMode: 'both'
+};
+
+let data = null;   // 현재 편집중인 JSON 전체
+let sha  = null;   // GitHub 파일 SHA
+let selectedKey = null;
+let pendingImageUploads = {};  // { styleKey: { file, name } }
+let isDirty = false;
+
+// ═══════════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════════
+(function init() {
+  loadCfg();
+  applyTheme(localStorage.getItem('sm-theme') || 'dark');
+  bindUI();
+})();
+
+function loadCfg() {
+  try {
+    const s = localStorage.getItem('sm-cfg');
+    if (s) cfg = { ...cfg, ...JSON.parse(s) };
+  } catch {}
+  document.getElementById('sPAT').value        = cfg.pat;
+  document.getElementById('sOwner').value      = cfg.owner;
+  document.getElementById('sRepo').value       = cfg.repo;
+  document.getElementById('sFilePath').value   = cfg.filePath;
+  document.getElementById('sBranch').value     = cfg.branch;
+  document.getElementById('sImgDir').value     = cfg.imgDir;
+  document.getElementById('sWorkerUrl').value  = cfg.workerUrl;
+  document.getElementById('sVersionMode').value= cfg.versionMode;
+}
+
+function saveCfg() {
+  cfg.pat         = document.getElementById('sPAT').value.trim();
+  cfg.owner       = document.getElementById('sOwner').value.trim();
+  cfg.repo        = document.getElementById('sRepo').value.trim();
+  cfg.filePath    = document.getElementById('sFilePath').value.trim() || 'styles.json';
+  cfg.branch      = document.getElementById('sBranch').value.trim() || 'main';
+  cfg.imgDir      = document.getElementById('sImgDir').value.trim();
+  cfg.workerUrl   = document.getElementById('sWorkerUrl').value.trim();
+  cfg.versionMode = document.getElementById('sVersionMode').value;
+  localStorage.setItem('sm-cfg', JSON.stringify(cfg));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  THEME
+// ═══════════════════════════════════════════════════════════════════
+function applyTheme(t) {
+  document.body.setAttribute('data-theme', t);
+  document.getElementById('btnTheme').textContent = t === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem('sm-theme', t);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  BIND UI EVENTS
+// ═══════════════════════════════════════════════════════════════════
+function bindUI() {
+  document.getElementById('btnTheme').onclick = () => {
+    const cur = document.body.getAttribute('data-theme');
+    applyTheme(cur === 'dark' ? 'light' : 'dark');
+  };
+
+  document.getElementById('btnSettings').onclick = () => openOverlay('overlay');
+  document.getElementById('btnCloseSettings').onclick = () => closeOverlay('overlay');
+  document.getElementById('overlay').onclick = (e) => {
+    if (e.target === document.getElementById('overlay')) closeOverlay('overlay');
+  };
+  document.getElementById('btnSaveSettings').onclick = () => {
+    saveCfg();
+    closeOverlay('overlay');
+    toast('설정 저장됨', 'success');
+  };
+
+  document.getElementById('btnLoad').onclick = loadFromGitHub;
+  document.getElementById('btnSave').onclick = saveToGitHub;
+
+  document.getElementById('btnAddStyle').onclick = addNewStyle;
+
+  document.getElementById('fOverride').onchange = () => {
+    document.getElementById('overrideBody').style.display =
+      document.getElementById('fOverride').checked ? 'block' : 'none';
+  };
+
+  document.getElementById('btnApply').onclick = applyEditorToData;
+  document.getElementById('btnRevert').onclick = () => { if (selectedKey) renderEditor(selectedKey); };
+  document.getElementById('btnSetDefault').onclick = setAsDefault;
+  document.getElementById('btnDeleteStyle').onclick = deleteStyle;
+
+  document.getElementById('btnCheckHealth').onclick = checkHealth;
+
+  document.getElementById('imgUploadInput').onchange = handleImageSelect;
+  document.getElementById('btnClearImage').onclick = clearImage;
+
+  document.getElementById('btnEditWorkerDefaults').onclick = () => {
+    openWdDrawer();
+  };
+  document.getElementById('btnCloseWd').onclick = () => closeOverlay('wdOverlay');
+  document.getElementById('wdOverlay').onclick = (e) => {
+    if (e.target === document.getElementById('wdOverlay')) closeOverlay('wdOverlay');
+  };
+  document.getElementById('btnSaveWd').onclick = saveWorkerDefaults;
+}
+
+function openOverlay(id)  { document.getElementById(id).classList.add('open'); }
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════════════════════════════════════════════════════════
+//  GITHUB API
+// ═══════════════════════════════════════════════════════════════════
+function ghHeaders() {
+  return {
+    'Authorization': `Bearer ${cfg.pat}`,
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'Content-Type': 'application/json',
+  };
+}
+
+function ghUrl(path) {
+  return `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`;
+}
+
+async function loadFromGitHub() {
+  if (!cfg.pat || !cfg.owner || !cfg.repo) {
+    toast('설정에서 PAT, Owner, Repo를 먼저 입력해주세요', 'error');
+    openOverlay('overlay');
+    return;
+  }
+
+  const btn = document.getElementById('btnLoad');
+  btn.disabled = true;
+  btn.textContent = '⏳ 불러오는 중...';
+
+  try {
+    const url = ghUrl(cfg.filePath) + `?ref=${cfg.branch}`;
+    const res = await fetch(url, { headers: ghHeaders() });
+    if (!res.ok) throw new Error(`GitHub API ${res.status}: ${await res.text()}`);
+    const json = await res.json();
+    sha = json.sha;
+    const decoded = JSON.parse(atob(json.content.replace(/\n/g, '')));
+    data = decoded;
+    renderAll();
+    document.getElementById('btnSave').disabled = false;
+    toast(`로드 완료 — v${data.version || '?'}`, 'success');
+
+    // 헬스체크도 자동 시도
+    if (cfg.workerUrl) checkHealth(true);
+
+  } catch(e) {
+    toast('로드 실패: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬇ 불러오기';
+  }
+}
+
+async function saveToGitHub() {
+  if (!data) return;
+
+  // 이미지 업로드 먼저
+  const uploadKeys = Object.keys(pendingImageUploads);
+  if (uploadKeys.length > 0) {
+    toast(`이미지 ${uploadKeys.length}개 업로드 중...`, 'info');
+    for (const key of uploadKeys) {
+      const { file, name } = pendingImageUploads[key];
+      await uploadImageToGitHub(key, file, name);
+    }
+    pendingImageUploads = {};
+  }
+
+  // 버전 증가
+  bumpVersion();
+
+  const btn = document.getElementById('btnSave');
+  btn.disabled = true;
+  btn.textContent = '⏳ 저장 중...';
+
+  try {
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+    const body = {
+      message: `style-manager: update styles.json v${data.version}`,
+      content,
+      branch: cfg.branch,
+    };
+    if (sha) body.sha = sha;
+
+    const res = await fetch(ghUrl(cfg.filePath), {
+      method: 'PUT',
+      headers: ghHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`GitHub API ${res.status}: ${await res.text()}`);
+    const result = await res.json();
+    sha = result.content.sha;
+    isDirty = false;
+
+    document.getElementById('topVersionBadge').textContent = `v${data.version}`;
+    toast(`저장 완료 v${data.version}`, 'success');
+
+    // 헬스체크로 워커 캐시 갱신 확인
+    if (cfg.workerUrl) {
+      setTimeout(() => checkHealth(true), 1500);
+    }
+  } catch(e) {
+    toast('저장 실패: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬆ GitHub 저장';
+  }
+}
+
+async function uploadImageToGitHub(styleKey, file, fileName) {
+  const b64 = await fileToBase64(file);
+  const path = cfg.imgDir
+    ? cfg.imgDir.replace(/\/$/, '') + '/' + fileName
+    : fileName;
+
+  try {
+    // 기존 파일 SHA 확인
+    let existingSha = null;
+    try {
+      const chk = await fetch(ghUrl(path) + `?ref=${cfg.branch}`, { headers: ghHeaders() });
+      if (chk.ok) {
+        const j = await chk.json();
+        existingSha = j.sha;
+      }
+    } catch {}
+
+    const body = {
+      message: `style-manager: upload preview ${fileName}`,
+      content: b64,
+      branch: cfg.branch,
+    };
+    if (existingSha) body.sha = existingSha;
+
+    const res = await fetch(ghUrl(path), {
+      method: 'PUT',
+      headers: ghHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`이미지 업로드 실패 ${res.status}`);
+    toast(`이미지 업로드됨: ${fileName}`, 'success');
+  } catch(e) {
+    toast('이미지 업로드 오류: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  VERSION BUMP
+// ═══════════════════════════════════════════════════════════════════
+function bumpVersion() {
+  const now = new Date().toISOString().slice(0, 16);
+  const mode = cfg.versionMode;
+
+  if (mode === 'timestamp') {
+    data.version = now;
+  } else if (mode === 'semver') {
+    data.version = bumpSemver(data.version || '1.0.0');
+  } else {
+    // both
+    data.version = bumpSemver(data.version || '1.0.0');
+    data.updatedAt = now;
+  }
+}
+
+function bumpSemver(v) {
+  const parts = String(v).split('.').map(Number);
+  while (parts.length < 3) parts.push(0);
+  parts[2]++;
+  return parts.join('.');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════════════
+function renderAll() {
+  if (!data) return;
+  renderSidebar();
+  updateTopVersion();
+  renderWorkerDefaultsInfo();
+}
+
+function updateTopVersion() {
+  document.getElementById('topVersionBadge').textContent =
+    `v${data.version || '?'}`;
+}
+
+function renderWorkerDefaultsInfo() {
+  const wd = data.workerDefaults;
+  const el = document.getElementById('workerDefaultsInfo');
+  if (!wd) {
+    el.textContent = '(없음 — Worker 하드코딩 사용)';
+    return;
+  }
+  el.innerHTML = Object.entries(wd)
+    .map(([k, v]) => `<span style="color:var(--text2)">${k}</span>: <span style="color:var(--accent)">${v}</span>`)
+    .join('<br>');
+}
+
+function renderSidebar() {
+  const list = document.getElementById('styleList');
+  const styles = data.styles || {};
+  const keys = Object.keys(styles);
+
+  if (keys.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:32px 16px"><div class="icon">🎨</div><p>스타일이 없습니다</p></div>';
+    return;
+  }
+
+  list.innerHTML = keys.map(key => {
+    const s = styles[key];
+    const label = s.meta?.label || '';
+    const isDefault = key === data.default;
+    const imgSrc = getPreviewUrl(key, s);
+
+    return `
+      <div class="style-item ${key === selectedKey ? 'active' : ''}" data-key="${key}" onclick="selectStyle('${key}')">
+        <div class="style-thumb">
+          ${imgSrc ? `<img src="${imgSrc}" onerror="this.parentElement.textContent='🖼'">` : '🖼'}
+        </div>
+        <div class="style-item-info">
+          <div class="style-item-key">${key}</div>
+          ${label ? `<div class="style-item-label">${label}</div>` : ''}
+        </div>
+        ${isDefault ? '<div class="default-badge">기본</div>' : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function getPreviewUrl(key, style) {
+  if (!cfg.owner || !cfg.repo) return null;
+  const fileName = style.meta?.previewImage || (key + '.png');
+  const dir = cfg.imgDir ? cfg.imgDir.replace(/\/$/, '') + '/' : '';
+  return `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch}/${dir}${fileName}`;
+}
+
+function selectStyle(key) {
+  selectedKey = key;
+  renderSidebar();
+  renderEditor(key);
+}
+
+function renderEditor(key) {
+  if (!data || !data.styles[key]) return;
+
+  const s = data.styles[key];
+
+  document.getElementById('editorEmpty').style.display  = 'none';
+  document.getElementById('editorForm').style.display   = 'flex';
+
+  document.getElementById('editorKeyDisplay').innerHTML =
+    `<span style="color:var(--text3);font-size:12px;font-weight:400"># </span>${key}` +
+    (s.meta?.label ? `<small>${s.meta.label}</small>` : '');
+
+  const isDefault = key === data.default;
+  document.getElementById('editorDefaultBadge').style.display = isDefault ? 'inline-flex' : 'none';
+
+  // Fill form
+  document.getElementById('fKey').value          = key;
+  document.getElementById('fLabel').value        = s.meta?.label        || '';
+  document.getElementById('fSourceUrl').value    = s.meta?.sourceUrl    || '';
+  document.getElementById('fNotes').value        = s.meta?.notes        || '';
+  document.getElementById('fPromptPrefix').value = s.promptPrefix       || '';
+  document.getElementById('fNegPrefix').value    = s.negativePrefix     || '';
+
+  const ov = !!s.overrideDefaults;
+  document.getElementById('fOverride').checked = ov;
+  document.getElementById('overrideBody').style.display = ov ? 'block' : 'none';
+
+  document.getElementById('fSteps').value       = s.steps    ?? '';
+  document.getElementById('fScale').value       = s.scale    ?? '';
+  document.getElementById('fRescale').value     = s.rescale  ?? '';
+  document.getElementById('fWidth').value       = s.width    ?? '';
+  document.getElementById('fHeight').value      = s.height   ?? '';
+  document.getElementById('fSampler').value     = s.sampler  || '';
+  document.getElementById('fScheduler').value   = s.scheduler|| '';
+  document.getElementById('fSmea').checked      = !!s.smea;
+  document.getElementById('fSmeaDyn').checked   = !!s.smeaDyn;
+  document.getElementById('fUseIncomingNeg').checked = !!s.useIncomingNegative;
+
+  // Preview image
+  const previewUrl = getPreviewUrl(key, s);
+  renderPreviewImg(previewUrl, s.meta?.previewImage);
+}
+
+function renderPreviewImg(url, filename) {
+  const wrap = document.getElementById('previewImgWrap');
+  const nameEl = document.getElementById('previewFilename');
+  if (url) {
+    wrap.innerHTML = `<img src="${url}" onerror="this.parentElement.textContent='🖼'">`;
+    nameEl.textContent = filename || '(자동: {키}.png)';
+  } else {
+    wrap.textContent = '🖼';
+    nameEl.textContent = '파일 미지정';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  EDITOR ACTIONS
+// ═══════════════════════════════════════════════════════════════════
+function applyEditorToData() {
+  if (!data) return;
+
+  const oldKey = selectedKey;
+  const newKey = document.getElementById('fKey').value.trim();
+  if (!newKey) { toast('스타일 키를 입력해주세요', 'error'); return; }
+  if (!/^[a-z0-9_-]+$/.test(newKey)) {
+    toast('키는 영소문자, 숫자, -, _ 만 사용 가능합니다', 'error');
+    return;
+  }
+  if (newKey !== oldKey && data.styles[newKey]) {
+    toast(`키 "${newKey}" 이미 존재합니다`, 'error');
+    return;
+  }
+
+  const ov = document.getElementById('fOverride').checked;
+
+  const updated = {
+    promptPrefix:   document.getElementById('fPromptPrefix').value,
+    negativePrefix: document.getElementById('fNegPrefix').value,
+    overrideDefaults: ov,
+  };
+
+  if (ov) {
+    const n = (id) => { const v = document.getElementById(id).value; return v !== '' ? Number(v) : undefined; };
+    const s = (id) => document.getElementById(id).value || undefined;
+    const b = (id) => document.getElementById(id).checked;
+
+    if (n('fSteps')   !== undefined) updated.steps   = n('fSteps');
+    if (n('fScale')   !== undefined) updated.scale   = n('fScale');
+    if (n('fRescale') !== undefined) updated.rescale = n('fRescale');
+    if (n('fWidth')   !== undefined) updated.width   = n('fWidth');
+    if (n('fHeight')  !== undefined) updated.height  = n('fHeight');
+    if (s('fSampler'))    updated.sampler   = s('fSampler');
+    if (s('fScheduler'))  updated.scheduler = s('fScheduler');
+    updated.smea    = b('fSmea');
+    updated.smeaDyn = b('fSmeaDyn');
+    updated.useIncomingNegative = b('fUseIncomingNeg');
+  }
+
+  updated.meta = {
+    label:     document.getElementById('fLabel').value,
+    sourceUrl: document.getElementById('fSourceUrl').value,
+    notes:     document.getElementById('fNotes').value,
+    previewImage: data.styles[oldKey]?.meta?.previewImage || '',
+  };
+
+  // 키 변경 처리
+  if (newKey !== oldKey) {
+    const newStyles = {};
+    for (const [k, v] of Object.entries(data.styles)) {
+      newStyles[k === oldKey ? newKey : k] = v;
+    }
+    data.styles = newStyles;
+    if (data.default === oldKey) data.default = newKey;
+    selectedKey = newKey;
+    if (pendingImageUploads[oldKey]) {
+      pendingImageUploads[newKey] = pendingImageUploads[oldKey];
+      delete pendingImageUploads[oldKey];
+    }
+  }
+
+  data.styles[newKey] = { ...data.styles[newKey], ...updated };
+  isDirty = true;
+  renderAll();
+  selectStyle(newKey);
+  toast('변경 적용됨 (저장 전)', 'info');
+}
+
+function addNewStyle() {
+  if (!data) { toast('먼저 불러오기를 해주세요', 'error'); return; }
+
+  let key = 'new-style';
+  let i = 1;
+  while (data.styles[key]) key = `new-style-${i++}`;
+
+  data.styles[key] = {
+    promptPrefix:   '',
+    negativePrefix: '',
+    overrideDefaults: false,
+    meta: { label: '', sourceUrl: '', notes: '', previewImage: '' },
+  };
+  isDirty = true;
+  renderSidebar();
+  selectStyle(key);
+}
+
+function deleteStyle() {
+  if (!selectedKey || !data) return;
+  if (!confirm(`"${selectedKey}" 스타일을 삭제할까요?`)) return;
+
+  const wasDefault = data.default === selectedKey;
+  delete data.styles[selectedKey];
+
+  if (wasDefault) {
+    const keys = Object.keys(data.styles);
+    data.default = keys[0] || '';
+  }
+
+  isDirty = true;
+  selectedKey = null;
+  document.getElementById('editorEmpty').style.display = 'flex';
+  document.getElementById('editorForm').style.display  = 'none';
+  renderAll();
+  toast('스타일 삭제됨', 'info');
+}
+
+function setAsDefault() {
+  if (!selectedKey || !data) return;
+  data.default = selectedKey;
+  isDirty = true;
+  renderAll();
+  selectStyle(selectedKey);
+  toast(`"${selectedKey}"을 기본 스타일로 설정`, 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  IMAGE HANDLING
+// ═══════════════════════════════════════════════════════════════════
+function handleImageSelect(e) {
+  const file = e.target.files[0];
+  if (!file || !selectedKey) return;
+
+  const ext  = file.name.split('.').pop();
+  const name = selectedKey + '.' + ext;
+
+  pendingImageUploads[selectedKey] = { file, name };
+
+  // Update meta
+  if (!data.styles[selectedKey].meta) data.styles[selectedKey].meta = {};
+  data.styles[selectedKey].meta.previewImage = name;
+
+  // Local preview
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const wrap = document.getElementById('previewImgWrap');
+    wrap.innerHTML = `<img src="${ev.target.result}">`;
+    document.getElementById('previewFilename').textContent = name + ' (업로드 대기중)';
+    document.getElementById('uploadStatus').textContent = '💾 GitHub 저장 시 함께 업로드됩니다';
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function clearImage() {
+  if (!selectedKey) return;
+  if (data.styles[selectedKey].meta) data.styles[selectedKey].meta.previewImage = '';
+  delete pendingImageUploads[selectedKey];
+  renderPreviewImg(null, null);
+  renderSidebar();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  WORKER DEFAULTS DRAWER
+// ═══════════════════════════════════════════════════════════════════
+function openWdDrawer() {
+  const wd = (data && data.workerDefaults) || {};
+  document.getElementById('wdSteps').value   = wd.steps    ?? 28;
+  document.getElementById('wdScale').value   = wd.scale    ?? 5.0;
+  document.getElementById('wdRescale').value = wd.rescale  ?? 0.0;
+  document.getElementById('wdWidth').value   = wd.width    ?? 832;
+  document.getElementById('wdHeight').value  = wd.height   ?? 1216;
+  document.getElementById('wdSampler').value    = wd.sampler    || 'k_euler_ancestral';
+  document.getElementById('wdScheduler').value  = wd.scheduler  || 'karras';
+  document.getElementById('wdUseIncomingNeg').checked = !!wd.useIncomingNegative;
+  openOverlay('wdOverlay');
+}
+
+function saveWorkerDefaults() {
+  if (!data) { toast('먼저 불러오기를 해주세요', 'error'); return; }
+  const n = (id) => Number(document.getElementById(id).value);
+  data.workerDefaults = {
+    steps:               n('wdSteps'),
+    scale:               n('wdScale'),
+    rescale:             n('wdRescale'),
+    width:               n('wdWidth'),
+    height:              n('wdHeight'),
+    sampler:             document.getElementById('wdSampler').value,
+    scheduler:           document.getElementById('wdScheduler').value,
+    useIncomingNegative: document.getElementById('wdUseIncomingNeg').checked,
+  };
+  isDirty = true;
+  closeOverlay('wdOverlay');
+  renderWorkerDefaultsInfo();
+  toast('전역값 적용됨 (미저장 상태)', 'info');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  HEALTH CHECK
+// ═══════════════════════════════════════════════════════════════════
+async function checkHealth(silent = false) {
+  const url = cfg.workerUrl || document.getElementById('sWorkerUrl').value.trim();
+  if (!url) {
+    if (!silent) toast('Worker URL이 없습니다', 'error');
+    return;
+  }
+
+  const dot  = document.getElementById('healthDot');
+  const txt  = document.getElementById('healthText');
+  const res  = document.getElementById('healthResult');
+
+  dot.className = 'health-dot pulse';
+  txt.textContent = '확인 중...';
+
+  try {
+    const r = await fetch(url.replace(/\/$/, '') + '/health', { signal: AbortSignal.timeout(8000) });
+    const j = await r.json();
+    dot.className  = 'health-dot ok';
+    txt.textContent = `v${j.cacheVersion || '?'}`;
+    if (res) res.innerHTML = `
+      <b style="color:var(--success)">✓ 연결 성공</b><br>
+      캐시버전: ${j.cacheVersion}<br>
+      기본스타일: ${j.defaultStyle}<br>
+      스타일: ${(j.styles || []).join(', ')}
+    `;
+    if (!silent) toast(`Worker 연결 OK — v${j.cacheVersion}`, 'success');
+  } catch(e) {
+    dot.className  = 'health-dot error';
+    txt.textContent = '오류';
+    if (res) res.innerHTML = `<b style="color:var(--danger)">✗ 연결 실패</b><br>${e.message}`;
+    if (!silent) toast('Worker 연결 실패: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════════════════
+function toast(msg, type = 'info') {
+  const c = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  const icons = { success: '✓', error: '✕', info: 'ℹ' };
+  el.innerHTML = `<span>${icons[type] || ''}</span> ${msg}`;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+</script>
+</body>
+</html>
