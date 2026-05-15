@@ -116,6 +116,7 @@ body {
   grid-template-columns: 300px 1fr;
   height: calc(100vh - 56px);
   overflow: hidden;
+  min-height: 0;
 }
 
 .sidebar {
@@ -124,6 +125,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 }
 
 .sidebar-header {
@@ -237,6 +239,7 @@ body {
   flex-direction: column;
   overflow: hidden;
   background: var(--bg);
+  min-height: 0;
 }
 
 .editor-header {
@@ -751,7 +754,7 @@ select { cursor: pointer; }
         <div class="icon">←</div>
         <p>왼쪽에서 스타일을 선택하거나<br>새로 추가하세요</p>
       </div>
-      <div id="editorForm" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div id="editorForm" style="display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
         <div class="editor-header">
           <div class="editor-key-display" id="editorKeyDisplay">—</div>
           <span class="default-badge" id="editorDefaultBadge" style="display:none">기본값</span>
