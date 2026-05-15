@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "default": "ils",
   "styles": {
     "default": {
@@ -15,12 +15,19 @@
       "negativePrefix": "lowres, worst quality, bad anatomy, realistic, photo,"
     },
     "ils": {
-      "promptPrefix": "1boy, [[[wengwengchim]]], siy (shengxiu760722), chengzhineixihuanxiaogou, almostghost, utsuhostoria, 0.5::na_tarapisu153 ::, naoko (naonocoto), 2::galbae ::, veryaesthetic, best quality, masterpiece, highres, incredibly absurdres, beautiful lighting, soft light, pov adoring, , very aesthetic, masterpiece, no text,",
-      "negativePrefix": "blurry, lowres, error, film grain, scan artifacts, worst quality, bad quality, jpeg artifacts, very displeasing, chromatic aberration, multiple views, logo, too many watermarks, sfw, censored, gore, monster, {{{{noise, extra head, extra body, worst quality, bad quality, low quality, very displeasing, normal quality, displeasing}}}}, {{{{{{bad hands, bad eyes, bad pupils}}}}}}, text, fewer digits, cropped, JPEG artifacts, signature, duplicate, cropped, error, watermark, username, artist name, fat, extra arms, extra digits, extra legs, extra toes, deformed, long neck, bad feet, unfinished, chromatic aberration, animal,"
+      "promptPrefix": "year 2024, year 2025, 8k, masterpiece, best quality, amazing quality, masterpiece, highres, high detail, incredibly absurdres, very aesthetic, best illustration, detailed eyes, beautiful detailed face, -1.5::simple background::, dynamic view, dynamic pose, artist:teeniika, artist:43pon, artist:nidexintu, 1.2::artist:ciloranko::, artist:suzumi (ccroquette), 0.8::artist:duckchuni::, 0.5::artist:fuinagi_(huyuu_mm)::, 0.9::artist:himo (himodayoo)::",
+      "negativePrefix": "worst quality, bad quality, blurry, lowres, error, 2::watermark::, text, artist name, logo, username, artist name, low detail, unfinished, displeasing, very displeasing, bad hand, bad leg, bad illustration, dated, nail art, jpeg artifacts, fewer digits, extra leg, extra arm, extra fingers, missing limb, multiple views, scan, text, scan artifacts, jpeg artifacts, 5::artist collaboration::, signature, gloss, censored, nostrils, artist:milkpanda, artist:gaoo_(frpjx283), realistic, artist:kurukurumagical",
+      "overrideDefaults": false,
+      "meta": {
+        "label": "",
+        "sourceUrl": "",
+        "notes": "",
+        "previewImage": ""
+      }
     },
     "new-style": {
-      "promptPrefix": "",
-      "negativePrefix": "",
+      "promptPrefix": "1boy, [[[wengwengchim]]], siy (shengxiu760722), chengzhineixihuanxiaogou, almostghost, utsuhostoria, 0.5::na_tarapisu153 ::, naoko (naonocoto), 2::galbae ::, veryaesthetic, best quality, masterpiece, highres, incredibly absurdres, beautiful lighting, soft light, pov adoring, , very aesthetic, masterpiece, no text,",
+      "negativePrefix": "blurry, lowres, error, film grain, scan artifacts, worst quality, bad quality, jpeg artifacts, very displeasing, chromatic aberration, multiple views, logo, too many watermarks, sfw, censored, gore, monster, {{{{noise, extra head, extra body, worst quality, bad quality, low quality, very displeasing, normal quality, displeasing}}}}, {{{{{{bad hands, bad eyes, bad pupils}}}}}}, text, fewer digits, cropped, JPEG artifacts, signature, duplicate, cropped, error, watermark, username, artist name, fat, extra arms, extra digits, extra legs, extra toes, deformed, long neck, bad feet, unfinished, chromatic aberration, animal,",
       "overrideDefaults": false,
       "meta": {
         "label": "",
@@ -30,5 +37,5 @@
       }
     }
   },
-  "updatedAt": "2026-05-15T11:24"
+  "updatedAt": "2026-05-15T11:26"
 }
