@@ -69,11 +69,16 @@
     background-color: var(--surface-color);
     margin-bottom: 0.5rem;
     border-radius: 4px;
-    transition: border-color 0.2s;
+    transition: background-color 0.2s, border-color 0.2s;
 }
 
 .list-item:hover {
     border-color: var(--primary-color);
+}
+
+.list-item.checked {
+    background-color: var(--checked-bg);
+    border-color: var(--checked-border);
 }
 
 .list-item.clickable {

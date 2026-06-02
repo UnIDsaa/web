@@ -97,10 +97,11 @@ const uiRender = {
             if (searchText && !searchStr.includes(searchText.toLowerCase())) return;
 
             const div = document.createElement('div');
-            div.className = 'list-item';
             
             const isChecked = stateManager.isEventChecked(ev.EventID);
             if (showUncheckedOnly && isChecked) return;
+            
+            div.className = `list-item ${isChecked ? 'checked' : ''}`;
             
             const tags = dataParser.extractTags(ev.Remarks);
 
@@ -139,10 +140,11 @@ const uiRender = {
             if (searchText && !searchStr.includes(searchText.toLowerCase())) return;
 
             const div = document.createElement('div');
-            div.className = 'list-item';
             
             const isChecked = stateManager.isEndingChecked(endingId);
             if (showUncheckedOnly && isChecked) return;
+
+            div.className = `list-item ${isChecked ? 'checked' : ''}`;
 
             div.innerHTML = `
                 <input type="checkbox" class="item-checkbox ending-checkbox" data-id="${endingId}" ${isChecked ? 'checked' : ''}>

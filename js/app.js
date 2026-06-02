@@ -83,12 +83,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Events
         document.querySelectorAll('.event-checkbox').forEach(cb => {
             cb.addEventListener('change', (e) => {
-                stateManager.toggleEvent(e.target.dataset.id, e.target.checked);
+                const isChecked = e.target.checked;
+                stateManager.toggleEvent(e.target.dataset.id, isChecked);
+                
+                const itemDiv = e.target.closest('.list-item');
+                if (isChecked) {
+                    itemDiv.classList.add('checked');
+                } else {
+                    itemDiv.classList.remove('checked');
+                }
+
                 const events = dataParser.getEventsByCharacter(currentChar);
                 const endings = dataParser.getEndingsByCharacter(currentChar);
                 updateProgressStats(events, endings);
-                if (showUncheckedOnly && e.target.checked) {
-                    e.target.closest('.list-item').style.display = 'none';
+                if (showUncheckedOnly && isChecked) {
+                    itemDiv.style.display = 'none';
                 }
             });
         });
@@ -96,12 +105,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Endings
         document.querySelectorAll('.ending-checkbox').forEach(cb => {
             cb.addEventListener('change', (e) => {
-                stateManager.toggleEnding(e.target.dataset.id, e.target.checked);
+                const isChecked = e.target.checked;
+                stateManager.toggleEnding(e.target.dataset.id, isChecked);
+                
+                const itemDiv = e.target.closest('.list-item');
+                if (isChecked) {
+                    itemDiv.classList.add('checked');
+                } else {
+                    itemDiv.classList.remove('checked');
+                }
+
                 const events = dataParser.getEventsByCharacter(currentChar);
                 const endings = dataParser.getEndingsByCharacter(currentChar);
                 updateProgressStats(events, endings);
-                if (showUncheckedOnly && e.target.checked) {
-                    e.target.closest('.list-item').style.display = 'none';
+                if (showUncheckedOnly && isChecked) {
+                    itemDiv.style.display = 'none';
                 }
             });
         });

@@ -15,6 +15,8 @@
     --danger-color: #d9534f;
     --danger-hover: #c9302c;
     --badge-bg: #38312d;
+    --checked-bg: #22333b;
+    --checked-border: #324a54;
 }
 
 [data-theme="light"] {
@@ -29,6 +31,8 @@
     --danger-color: #d9534f;
     --danger-hover: #c9302c;
     --badge-bg: #e6dfd3;
+    --checked-bg: #e6f0f5;
+    --checked-border: #bcd0da;
 }
 
 * {
