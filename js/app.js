@@ -14,6 +14,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // Check for developer mode via URL parameter (?dev=true)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('dev') === 'true') {
+        document.querySelectorAll('.dev-tool').forEach(el => el.style.display = 'inline-block');
+    }
+
     // Render Sidebar
     uiRender.renderSidebar(dataParser.characters, (charName) => {
         currentChar = charName;
@@ -189,5 +195,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             refreshViews();
         }
     });
+
+    // Developer Export Tools
+    const devExportAllBtn = document.getElementById('btn-dev-export-all-csv');
+    if (devExportAllBtn) {
+        devExportAllBtn.addEventListener('click', () => {
+            stateManager.exportCSV(dataParser.eventsData, false);
+        });
+    }
+
+    const devExportUncheckedBtn = document.getElementById('btn-dev-export-unchecked-csv');
+    if (devExportUncheckedBtn) {
+        devExportUncheckedBtn.addEventListener('click', () => {
+            stateManager.exportCSV(dataParser.eventsData, true);
+        });
+    }
 
 });

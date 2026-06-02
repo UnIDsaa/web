@@ -83,6 +83,38 @@ const stateManager = {
         this.state.checkedEvents = {};
         this.state.checkedEndings = {};
         this.save();
+    },
+
+    exportCSV(eventsData, uncheckedOnly) {
+        if (!window.Papa) {
+            alert('PapaParse 라이브러리를 찾을 수 없습니다.');
+            return;
+        }
+
+        let targetEvents = eventsData.map(ev => {
+            return {
+                ...ev,
+                "달성여부": this.isEventChecked(ev.EventID) ? 'O' : 'X'
+            };
+        });
+
+        if (uncheckedOnly) {
+            targetEvents = targetEvents.filter(ev => ev["달성여부"] === 'X');
+        }
+
+        const csvStr = Papa.unparse(targetEvents);
+        
+        // 엑셀에서 한글이 깨지지 않도록 UTF-8 BOM 추가
+        const bom = "\uFEFF";
+        const blob = new Blob([bom + csvStr], { type: 'text/csv;charset=utf-8;' });
+        
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', uncheckedOnly ? 'kamokate_unchecked_events.csv' : 'kamokate_all_events_status.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 };
 
