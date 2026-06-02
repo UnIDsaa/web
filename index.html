@@ -15,6 +15,7 @@
             <h1>카모카테 이벤트/엔딩 체크리스트</h1>
         </div>
         <div class="header-controls">
+            <button id="btn-toggle-viewmode" class="btn">보기: 인게임 탭 모드</button>
             <button id="btn-toggle-lang" class="btn">언어: 함께 보기</button>
             <button id="btn-toggle-theme" class="btn">테마: 라이트(Light)</button>
         </div>
@@ -32,6 +33,9 @@
             <button id="btn-dev-export-unchecked-csv" class="btn btn-secondary dev-tool" style="display: none;">[Dev] 미회수 CSV 내보내기</button>
         </div>
         <div class="filter-controls">
+            <label style="margin-right: 1rem; font-size: 0.9rem; cursor: pointer;" title="체크박스가 아닌 이벤트 영역 전체를 클릭해도 체크됩니다.">
+                <input type="checkbox" id="check-block-click"> 블럭 클릭 체크
+            </label>
             <label style="margin-right: 1rem; font-size: 0.9rem; cursor: pointer;">
                 <input type="checkbox" id="check-unchecked-only"> 미회수 항목만 보기
             </label>
@@ -59,9 +63,8 @@
                 </div>
             </div>
 
-            <div class="view-tabs" style="display: none;">
-                <button class="tab-btn active" data-target="events">이벤트</button>
-                <button class="tab-btn" data-target="endings">엔딩</button>
+            <div id="dynamic-view-tabs" class="view-tabs" style="display: none;">
+                <!-- Tabs will be dynamically rendered here -->
             </div>
 
             <div id="list-container" class="list-container">

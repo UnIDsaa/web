@@ -25,6 +25,37 @@ const uiRender = {
         </div>`;
     },
 
+    renderTabs(mode, currentTab, onTabClick) {
+        const container = document.getElementById('dynamic-view-tabs');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        let tabs = [];
+        if (mode === 'all') {
+            tabs = [
+                { id: 'events', name: '이벤트 전체' },
+                { id: 'endings', name: '엔딩 전체' }
+            ];
+        } else {
+            tabs = [
+                { id: 'weekday', name: '중일' },
+                { id: 'holiday', name: '휴일' },
+                { id: 'conversation', name: '대화' },
+                { id: 'endgame', name: '종반' },
+                { id: 'endings', name: '엔딩' }
+            ];
+        }
+
+        tabs.forEach(t => {
+            const btn = document.createElement('button');
+            btn.className = `tab-btn ${t.id === currentTab ? 'active' : ''}`;
+            btn.dataset.target = t.id;
+            btn.textContent = t.name;
+            btn.addEventListener('click', () => onTabClick(t.id));
+            container.appendChild(btn);
+        });
+    },
+
     updateProgress(stats) {
         document.getElementById('progress-stats').style.display = 'block';
         
@@ -38,16 +69,29 @@ const uiRender = {
         endingEl.textContent = `${stats.collectedEndings}/${stats.totalEndings} (${edPercent}%)`;
     },
 
-    renderEvents(events, searchText, showUncheckedOnly) {
+    renderEvents(events, searchText, showUncheckedOnly, currentTab, viewMode) {
         const container = document.getElementById('events-view');
         container.innerHTML = '';
         
-        if (events.length === 0) {
+        let targetEvents = events;
+        
+        if (viewMode === 'tab') {
+            targetEvents = events.filter(ev => {
+                const numId = parseInt(ev.EventID.split('_')[1], 10);
+                if (currentTab === 'weekday') return numId >= 1 && numId < 50;
+                if (currentTab === 'holiday') return numId >= 50 && numId < 100;
+                if (currentTab === 'conversation') return numId >= 100 && numId < 200;
+                if (currentTab === 'endgame') return numId >= 200 && numId < 300;
+                return false;
+            });
+        }
+
+        if (targetEvents.length === 0) {
             container.innerHTML = '<div class="placeholder-text">표시할 이벤트가 없습니다.</div>';
             return;
         }
 
-        events.forEach(ev => {
+        targetEvents.forEach(ev => {
             // Filter by search text
             const searchStr = `${ev.Title_KO} ${ev.Title_JP} ${ev.Remarks}`.toLowerCase();
             if (searchText && !searchStr.includes(searchText.toLowerCase())) return;

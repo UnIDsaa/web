@@ -1,11 +1,13 @@
 document.addEventListener('DOMContentLoaded', async () => {
     // Current State
     let currentChar = null;
-    let currentTab = 'events'; // 'events' or 'endings'
+    let viewMode = 'tab'; // 'tab' or 'all'
+    let currentTab = 'weekday'; // default tab
     let currentLang = 'both'; // 'ko', 'jp', 'both'
     let currentTheme = 'dark'; // 'dark' or 'light'
     let searchText = '';
     let showUncheckedOnly = false;
+    let clickBlockToCheck = false;
 
     // Initialize Data
     const success = await dataParser.loadData();
@@ -35,8 +37,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         const events = dataParser.getEventsByCharacter(currentChar);
         const endings = dataParser.getEndingsByCharacter(currentChar);
         
-        uiRender.renderEvents(events, searchText, showUncheckedOnly);
-        uiRender.renderEndings(endings, searchText, showUncheckedOnly);
+        uiRender.renderTabs(viewMode, currentTab, (tabId) => {
+            currentTab = tabId;
+            refreshViews();
+        });
+
+        const eventsContainer = document.getElementById('events-view');
+        const endingsContainer = document.getElementById('endings-view');
+
+        if (currentTab === 'endings') {
+            eventsContainer.style.display = 'none';
+            endingsContainer.style.display = 'block';
+            uiRender.renderEndings(endings, searchText, showUncheckedOnly);
+        } else {
+            eventsContainer.style.display = 'block';
+            endingsContainer.style.display = 'none';
+            uiRender.renderEvents(events, searchText, showUncheckedOnly, currentTab, viewMode);
+        }
+
         bindCheckboxes();
         updateProgressStats(events, endings);
     }
@@ -87,18 +105,42 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
         });
+
+        // Block click binding
+        document.querySelectorAll('.list-item').forEach(item => {
+            if (clickBlockToCheck) {
+                item.classList.add('clickable');
+            } else {
+                item.classList.remove('clickable');
+            }
+
+            item.addEventListener('click', (e) => {
+                if (!clickBlockToCheck) return;
+                // Prevent triggering when actually clicking on the checkbox, to avoid double-toggle
+                if (e.target.type === 'checkbox') return; 
+                
+                const cb = item.querySelector('.item-checkbox');
+                if (cb) {
+                    cb.checked = !cb.checked;
+                    cb.dispatchEvent(new Event('change'));
+                }
+            });
+        });
     }
 
-    // Tab Switching
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.view-pane').forEach(p => p.classList.remove('active'));
-            
-            e.target.classList.add('active');
-            currentTab = e.target.dataset.target;
-            document.getElementById(`${currentTab}-view`).classList.add('active');
-        });
+    // View Mode Toggle
+    const btnViewMode = document.getElementById('btn-toggle-viewmode');
+    btnViewMode.addEventListener('click', () => {
+        if (viewMode === 'tab') {
+            viewMode = 'all';
+            currentTab = 'events';
+            btnViewMode.textContent = '보기: 전체 나열 모드';
+        } else {
+            viewMode = 'tab';
+            currentTab = 'weekday';
+            btnViewMode.textContent = '보기: 인게임 탭 모드';
+        }
+        refreshViews();
     });
 
     // Language Toggle
@@ -144,6 +186,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const checkUnchecked = document.getElementById('check-unchecked-only');
     checkUnchecked.addEventListener('change', (e) => {
         showUncheckedOnly = e.target.checked;
+        refreshViews();
+    });
+
+    // Block Click Filter
+    const checkBlockClick = document.getElementById('check-block-click');
+    checkBlockClick.addEventListener('change', (e) => {
+        clickBlockToCheck = e.target.checked;
         refreshViews();
     });
 
