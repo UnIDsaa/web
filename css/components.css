@@ -1,0 +1,133 @@
+/* Buttons */
+.btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--surface-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.btn:hover {
+    background-color: var(--surface-hover);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: #fff;
+    border-color: var(--danger-color);
+}
+
+.btn-danger:hover {
+    background-color: var(--danger-hover);
+    border-color: var(--danger-hover);
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Sidebar Character Items */
+.char-item {
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: background-color 0.2s;
+    border-left: 4px solid transparent;
+}
+
+.char-item:hover {
+    background-color: var(--surface-hover);
+}
+
+.char-item.active {
+    background-color: var(--surface-hover);
+    border-left-color: var(--primary-color);
+    font-weight: bold;
+}
+
+/* List Items (Events and Endings) */
+.list-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--surface-color);
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    transition: border-color 0.2s;
+}
+
+.list-item:hover {
+    border-color: var(--primary-color);
+}
+
+.item-checkbox {
+    margin-right: 1rem;
+    margin-top: 0.3rem;
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+}
+
+.item-content {
+    flex: 1;
+}
+
+.item-title {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+
+.item-title .lang-jp {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
+.item-id {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.item-remarks {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    white-space: pre-wrap;
+}
+
+/* Badges for Cross-checks */
+.badge-container {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    background-color: var(--badge-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
