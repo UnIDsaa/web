@@ -28,6 +28,9 @@
             <button id="btn-clear-all" class="btn btn-danger">모든 데이터 초기화</button>
         </div>
         <div class="filter-controls">
+            <label style="margin-right: 1rem; font-size: 0.9rem; cursor: pointer;">
+                <input type="checkbox" id="check-unchecked-only"> 미회수 항목만 보기
+            </label>
             <input type="text" id="input-search" placeholder="이벤트명 또는 조건 검색..." class="search-input">
         </div>
     </div>
@@ -39,7 +42,13 @@
 
         <section class="content-area">
             <div class="content-header">
-                <h2 id="current-character-name">캐릭터를 선택하세요</h2>
+                <div>
+                    <h2 id="current-character-name">캐릭터를 선택하세요</h2>
+                    <div id="progress-stats" style="display: none; font-size: 0.95rem; color: var(--text-muted); margin-top: 0.5rem; font-weight: bold;">
+                        이벤트: <span id="event-progress" style="color: var(--primary-color);">0/0 (0%)</span> | 
+                        엔딩: <span id="ending-progress" style="color: var(--primary-color);">0/0 (0%)</span>
+                    </div>
+                </div>
                 <div class="bulk-actions" style="display: none;">
                     <button id="btn-check-all" class="btn btn-sm">현재 탭 전체 선택</button>
                     <button id="btn-uncheck-all" class="btn btn-sm">현재 탭 전체 해제</button>

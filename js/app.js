@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentLang = 'both'; // 'ko', 'jp', 'both'
     let currentTheme = 'dark'; // 'dark' or 'light'
     let searchText = '';
+    let showUncheckedOnly = false;
 
     // Initialize Data
     const success = await dataParser.loadData();
@@ -28,9 +29,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         const events = dataParser.getEventsByCharacter(currentChar);
         const endings = dataParser.getEndingsByCharacter(currentChar);
         
-        uiRender.renderEvents(events, searchText);
-        uiRender.renderEndings(endings, searchText);
+        uiRender.renderEvents(events, searchText, showUncheckedOnly);
+        uiRender.renderEndings(endings, searchText, showUncheckedOnly);
         bindCheckboxes();
+        updateProgressStats(events, endings);
+    }
+
+    function updateProgressStats(events, endings) {
+        let collectedEvents = 0;
+        events.forEach(ev => {
+            if (stateManager.isEventChecked(ev.EventID)) collectedEvents++;
+        });
+
+        let collectedEndings = 0;
+        endings.forEach(ed => {
+            const endingId = `${ed.Character_KO}_${ed.EndingType_KO}_${ed.Version_KO || 'single'}`;
+            if (stateManager.isEndingChecked(endingId)) collectedEndings++;
+        });
+
+        uiRender.updateProgress({
+            totalEvents: events.length,
+            collectedEvents: collectedEvents,
+            totalEndings: endings.length,
+            collectedEndings: collectedEndings
+        });
     }
 
     function bindCheckboxes() {
@@ -38,6 +60,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelectorAll('.event-checkbox').forEach(cb => {
             cb.addEventListener('change', (e) => {
                 stateManager.toggleEvent(e.target.dataset.id, e.target.checked);
+                const events = dataParser.getEventsByCharacter(currentChar);
+                const endings = dataParser.getEndingsByCharacter(currentChar);
+                updateProgressStats(events, endings);
+                if (showUncheckedOnly && e.target.checked) {
+                    e.target.closest('.list-item').style.display = 'none';
+                }
             });
         });
         
@@ -45,6 +73,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelectorAll('.ending-checkbox').forEach(cb => {
             cb.addEventListener('change', (e) => {
                 stateManager.toggleEnding(e.target.dataset.id, e.target.checked);
+                const events = dataParser.getEventsByCharacter(currentChar);
+                const endings = dataParser.getEndingsByCharacter(currentChar);
+                updateProgressStats(events, endings);
+                if (showUncheckedOnly && e.target.checked) {
+                    e.target.closest('.list-item').style.display = 'none';
+                }
             });
         });
     }
@@ -97,6 +131,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const searchInput = document.getElementById('input-search');
     searchInput.addEventListener('input', (e) => {
         searchText = e.target.value;
+        refreshViews();
+    });
+
+    // Unchecked Only Filter
+    const checkUnchecked = document.getElementById('check-unchecked-only');
+    checkUnchecked.addEventListener('change', (e) => {
+        showUncheckedOnly = e.target.checked;
         refreshViews();
     });
 

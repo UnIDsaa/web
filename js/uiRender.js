@@ -25,7 +25,20 @@ const uiRender = {
         </div>`;
     },
 
-    renderEvents(events, searchText) {
+    updateProgress(stats) {
+        document.getElementById('progress-stats').style.display = 'block';
+        
+        const eventEl = document.getElementById('event-progress');
+        const endingEl = document.getElementById('ending-progress');
+
+        const evPercent = stats.totalEvents === 0 ? 0 : Math.round((stats.collectedEvents / stats.totalEvents) * 100);
+        const edPercent = stats.totalEndings === 0 ? 0 : Math.round((stats.collectedEndings / stats.totalEndings) * 100);
+
+        eventEl.textContent = `${stats.collectedEvents}/${stats.totalEvents} (${evPercent}%)`;
+        endingEl.textContent = `${stats.collectedEndings}/${stats.totalEndings} (${edPercent}%)`;
+    },
+
+    renderEvents(events, searchText, showUncheckedOnly) {
         const container = document.getElementById('events-view');
         container.innerHTML = '';
         
@@ -43,6 +56,7 @@ const uiRender = {
             div.className = 'list-item';
             
             const isChecked = stateManager.isEventChecked(ev.EventID);
+            if (showUncheckedOnly && isChecked) return;
             
             const tags = dataParser.extractTags(ev.Remarks);
 
@@ -64,7 +78,7 @@ const uiRender = {
         });
     },
 
-    renderEndings(endings, searchText) {
+    renderEndings(endings, searchText, showUncheckedOnly) {
         const container = document.getElementById('endings-view');
         container.innerHTML = '';
         
@@ -84,6 +98,7 @@ const uiRender = {
             div.className = 'list-item';
             
             const isChecked = stateManager.isEndingChecked(endingId);
+            if (showUncheckedOnly && isChecked) return;
 
             div.innerHTML = `
                 <input type="checkbox" class="item-checkbox ending-checkbox" data-id="${endingId}" ${isChecked ? 'checked' : ''}>
