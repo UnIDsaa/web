@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>드랍 주기 타이머</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#12151c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+  :root{
+    --bg: #12151c;
+    --panel: #1b1f29;
+    --panel-2: #232838;
+    --text: #e7e9ee;
+    --sub: #8a8fa3;
+    --accent: #5b8cff;
+    --hot: #ffb545;
+    --hot-glow: rgba(255, 181, 69, 0.35);
+    --line: #2b3040;
+    --danger: #ff6161;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: radial-gradient(1200px 600px at 50% -10%, #1a2030 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Pretendard", "Noto Sans KR", sans-serif;
+    min-height: 100vh;
+    display:flex;
+    justify-content:center;
+    padding: 32px 16px 60px;
+  }
+  .wrap{
+    width: 100%;
+    max-width: 480px;
+  }
+  h1{
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--sub);
+    text-align:center;
+    letter-spacing: 0.02em;
+    margin: 0 0 28px;
+  }
+  .timer-card{
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 36px 24px 28px;
+    text-align:center;
+    position: relative;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+  .timer-card.hot{
+    border-color: var(--hot);
+    box-shadow: 0 0 0 1px var(--hot), 0 0 40px var(--hot-glow);
+  }
+  .badge{
+    display:inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 4px 10px;
+    border-radius: 100px;
+    background: var(--panel-2);
+    color: var(--sub);
+    border: 1px solid var(--line);
+    margin-bottom: 18px;
+    visibility: hidden;
+  }
+  .timer-card.hot .badge{
+    visibility: visible;
+    background: var(--hot);
+    color: #2a1a00;
+    border-color: var(--hot);
+    animation: pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%, 100%{ transform: scale(1); }
+    50%{ transform: scale(1.06); }
+  }
+  .clock{
+    font-variant-numeric: tabular-nums;
+    font-size: 64px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    color: var(--text);
+    transition: color 0.3s ease;
+  }
+  .timer-card.hot .clock{
+    color: var(--hot);
+  }
+  .zone-label{
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--sub);
+  }
+  .zone-label b{ color: var(--text); font-weight: 600; }
+
+  .controls{
+    display:flex;
+    gap: 10px;
+    margin-top: 22px;
+  }
+  button{
+    flex: 1;
+    border: none;
+    border-radius: 12px;
+    padding: 15px 0;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.05s ease;
+    font-family: inherit;
+  }
+  button:active{ transform: scale(0.98); }
+  #startBtn{
+    background: var(--accent);
+    color: white;
+  }
+  #startBtn.running{
+    background: var(--panel-2);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+  }
+  #checkBtn{
+    background: #2c3244;
+    color: var(--text);
+    border: 1px solid var(--line);
+  }
+  #checkBtn:disabled{
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .sound-toggle{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 10px;
+    margin-top: 18px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-text{
+    font-size: 13px;
+    color: var(--sub);
+  }
+  .toggle-switch{
+    position: relative;
+    display:inline-block;
+    width: 40px;
+    height: 22px;
+    flex: none;
+  }
+  .toggle-switch input{
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .toggle-slider{
+    position: absolute;
+    inset: 0;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    transition: background 0.2s ease;
+  }
+  .toggle-slider::before{
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 2px;
+    top: 2px;
+    background: var(--sub);
+    border-radius: 50%;
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+  .toggle-switch input:checked + .toggle-slider{
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .toggle-switch input:checked + .toggle-slider::before{
+    transform: translateX(18px);
+    background: white;
+  }
+
+  .settings-link{
+    display:block;
+    text-align:center;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--sub);
+    text-decoration: underline;
+    cursor: pointer;
+    background: none;
+    border: none;
+    width: 100%;
+    font-family: inherit;
+  }
+  .settings-link:hover{ color: var(--text); }
+
+  .settings-panel{
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--line);
+    display: none;
+    text-align: left;
+  }
+  .settings-panel.open{ display: block; }
+
+  .settings-group{
+    margin-bottom: 18px;
+  }
+  .settings-group:last-child{ margin-bottom: 0; }
+  .settings-group-title{
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sub);
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+  }
+  .range-row{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .range-field{
+    display:flex;
+    align-items:center;
+    gap: 4px;
+  }
+  .range-field input{
+    width: 48px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    text-align:center;
+    padding: 7px 4px;
+    font-variant-numeric: tabular-nums;
+    font-family: inherit;
+  }
+  .range-field span{
+    font-size: 12px;
+    color: var(--sub);
+  }
+  .range-sep{
+    color: var(--sub);
+    font-size: 13px;
+    padding: 0 2px;
+  }
+
+  .radio-row{
+    display:flex;
+    align-items:center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .radio-row input{ accent-color: var(--accent); }
+  .radio-row label{ cursor:pointer; }
+
+  .sound-input-wrap{
+    margin-left: 22px;
+    margin-bottom: 10px;
+  }
+  .sound-input-wrap input[type="text"]{
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    padding: 9px 10px;
+    font-family: inherit;
+  }
+  .sound-input-wrap input[type="file"]{
+    width: 100%;
+    font-size: 12px;
+    color: var(--sub);
+  }
+  .file-name{
+    font-size: 11px;
+    color: var(--sub);
+    margin-top: 4px;
+  }
+
+  .settings-actions{
+    display:flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .settings-actions button{
+    padding: 10px 0;
+    font-size: 13px;
+  }
+  #testSoundBtn{
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--line);
+  }
+  #applySettingsBtn{
+    background: var(--accent);
+    color: white;
+  }
+  .settings-msg{
+    font-size: 12px;
+    margin-top: 8px;
+    min-height: 14px;
+  }
+  .settings-msg.error{ color: var(--danger); }
+  .settings-msg.success{ color: #6bd08a; }
+
+  .log-section{
+    margin-top: 32px;
+  }
+  .log-header{
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    margin-bottom: 10px;
+  }
+  .log-header span{
+    font-size: 13px;
+    color: var(--sub);
+    font-weight: 600;
+  }
+  #clearBtn{
+    flex: none;
+    background: none;
+    color: var(--sub);
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: underline;
+  }
+  #clearBtn:hover{ color: var(--text); }
+
+  .log-list{
+    list-style: none;
+    margin:0; padding:0;
+    display:flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .log-empty{
+    color: var(--sub);
+    font-size: 13px;
+    text-align:center;
+    padding: 24px 0;
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+  }
+  .log-item{
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 16px;
+  }
+  .log-item .idx{
+    color: var(--sub);
+    font-size: 12px;
+    width: 28px;
+  }
+  .log-item .lap-time{
+    font-variant-numeric: tabular-nums;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .log-item.in-window .lap-time{
+    color: var(--hot);
+  }
+  .log-item .clock-time{
+    font-size: 12px;
+    color: var(--sub);
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>드랍 주기 타이머</h1>
+
+    <div class="timer-card" id="timerCard">
+      <div class="badge" id="hotBadge">등장 구간</div>
+      <div class="clock" id="clock">0:00</div>
+      <div class="zone-label" id="zoneLabel">드랍 구간: <b>2:00 ~ 2:40</b></div>
+
+      <div class="controls">
+        <button id="startBtn">시작</button>
+        <button id="checkBtn" disabled>체크</button>
+      </div>
+
+      <label class="sound-toggle" id="soundToggle">
+        <span class="toggle-switch">
+          <input type="checkbox" id="soundCheckbox" checked>
+          <span class="toggle-slider"></span>
+        </span>
+        <span class="toggle-text">등장 구간 진입 시 알림음</span>
+      </label>
+
+      <button class="settings-link" id="notifPermBtn" style="margin-top:6px;">🔔 알림바 컨트롤 켜기 (앱 전환 없이 체크/중지)</button>
+      <div class="settings-msg" id="notifMsg" style="text-align:center;"></div>
+
+      <button class="settings-link" id="settingsLink">⚙ 상세 설정</button>
+
+      <div class="settings-panel" id="settingsPanel">
+        <div class="settings-group">
+          <div class="settings-group-title">드랍 구간 (강조 표시 범위)</div>
+          <div class="range-row">
+            <div class="range-field">
+              <input type="number" id="startMin" min="0" value="2"><span>분</span>
+            </div>
+            <div class="range-field">
+              <input type="number" id="startSec" min="0" max="59" value="0"><span>초</span>
+            </div>
+            <span class="range-sep">~</span>
+            <div class="range-field">
+              <input type="number" id="endMin" min="0" value="2"><span>분</span>
+            </div>
+            <div class="range-field">
+              <input type="number" id="endSec" min="0" max="59" value="40"><span>초</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">알림 소리</div>
+
+          <div class="radio-row">
+            <input type="radio" name="soundSource" id="soundSourceDefault" value="default" checked>
+            <label for="soundSourceDefault">기본음 (삑삑)</label>
+          </div>
+
+          <div class="radio-row">
+            <input type="radio" name="soundSource" id="soundSourceUrl" value="url">
+            <label for="soundSourceUrl">URL로 지정</label>
+          </div>
+          <div class="sound-input-wrap">
+            <input type="text" id="soundUrlInput" placeholder="https://example.com/sound.mp3">
+          </div>
+
+          <div class="radio-row">
+            <input type="radio" name="soundSource" id="soundSourceFile" value="file">
+            <label for="soundSourceFile">파일 업로드</label>
+          </div>
+          <div class="sound-input-wrap">
+            <input type="file" id="soundFileInput" accept="audio/*">
+            <div class="file-name" id="fileName"></div>
+          </div>
+        </div>
+
+        <div class="settings-actions">
+          <button id="testSoundBtn" type="button">🔊 소리 테스트</button>
+          <button id="applySettingsBtn" type="button">설정 적용</button>
+        </div>
+        <div class="settings-msg" id="settingsMsg"></div>
+      </div>
+    </div>
+
+    <div class="log-section">
+      <div class="log-header">
+        <span>기록 (<span id="logCount">0</span>)</span>
+        <button id="clearBtn">전체 삭제</button>
+      </div>
+      <ul class="log-list" id="logList"></ul>
+      <div class="log-empty" id="logEmpty">아직 기록이 없습니다.</div>
+    </div>
+  </div>
+
+<script>
+  let WINDOW_START = 120; // 2:00
+  let WINDOW_END = 160;   // 2:40
+
+  const clockEl = document.getElementById('clock');
+  const timerCard = document.getElementById('timerCard');
+  const startBtn = document.getElementById('startBtn');
+  const checkBtn = document.getElementById('checkBtn');
+  const logList = document.getElementById('logList');
+  const logEmpty = document.getElementById('logEmpty');
+  const logCount = document.getElementById('logCount');
+  const clearBtn = document.getElementById('clearBtn');
+  const zoneLabelEl = document.getElementById('zoneLabel');
+
+  const settingsLink = document.getElementById('settingsLink');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const startMinInput = document.getElementById('startMin');
+  const startSecInput = document.getElementById('startSec');
+  const endMinInput = document.getElementById('endMin');
+  const endSecInput = document.getElementById('endSec');
+  const soundUrlInput = document.getElementById('soundUrlInput');
+  const soundFileInput = document.getElementById('soundFileInput');
+  const fileNameEl = document.getElementById('fileName');
+  const testSoundBtn = document.getElementById('testSoundBtn');
+  const applySettingsBtn = document.getElementById('applySettingsBtn');
+  const settingsMsg = document.getElementById('settingsMsg');
+
+  const notifPermBtn = document.getElementById('notifPermBtn');
+  const notifMsg = document.getElementById('notifMsg');
+  let notifEnabled = false;
+  let swRegistration = null;
+
+  let running = false;
+  let startTime = null;
+  let rafId = null;
+  let laps = [];
+  let alertPlayedThisCycle = false;
+
+  const soundCheckbox = document.getElementById('soundCheckbox');
+
+  // ---- 오디오 ----
+  let audioCtx = null;
+  let customAudioEl = null;     // 저장된(적용된) 커스텀 알림음 <audio>
+  let customAudioObjectUrl = null; // 업로드 파일의 objectURL (해제용)
+
+  // 현재 재생 중인 알림음 추적 (체크/리셋 시 즉시 정지시키기 위함)
+  let activeSound = null; // { type: 'audio', el } | { type: 'oscillators', nodes: [...] }
+
+  function stopCurrentSound(){
+    if(!activeSound) return;
+    try{
+      if(activeSound.type === 'audio'){
+        activeSound.el.pause();
+        activeSound.el.currentTime = 0;
+      } else if(activeSound.type === 'oscillators'){
+        const now = audioCtx ? audioCtx.currentTime : 0;
+        activeSound.nodes.forEach(({ osc, gain }) => {
+          try{
+            gain.gain.cancelScheduledValues(now);
+            gain.gain.setValueAtTime(gain.gain.value, now);
+            gain.gain.linearRampToValueAtTime(0.0001, now + 0.03);
+            osc.stop(now + 0.04);
+          }catch(e){ /* 이미 멈춘 경우 무시 */ }
+        });
+      }
+    }catch(e){
+      console.warn('사운드 정지 실패:', e);
+    }
+    activeSound = null;
+  }
+
+  // 사용자 클릭(제스처) 시점에 AudioContext를 만들거나 깨워둔다 (자동재생 정책 대응)
+  function ensureAudioContext(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if(audioCtx.state === 'suspended'){
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  function playDefaultBeep(){
+    try{
+      const ctx = ensureAudioContext();
+      const now = ctx.currentTime;
+      const nodes = [];
+      [0, 0.16].forEach((offset) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, now + offset);
+        gain.gain.setValueAtTime(0, now + offset);
+        gain.gain.linearRampToValueAtTime(0.25, now + offset + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.14);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + offset);
+        osc.stop(now + offset + 0.15);
+        nodes.push({ osc, gain });
+      });
+      activeSound = { type: 'oscillators', nodes };
+      // 마지막 오실레이터가 끝나면 activeSound 정리
+      nodes[nodes.length - 1].osc.addEventListener('ended', () => {
+        if(activeSound && activeSound.type === 'oscillators' && activeSound.nodes === nodes){
+          activeSound = null;
+        }
+      });
+    }catch(e){
+      console.warn('기본 알림음 재생 실패:', e);
+    }
+  }
+
+  function playCustomAudio(audioEl, onError){
+    try{
+      const instance = audioEl.cloneNode(true); // 연속 재생 대비 매번 새 인스턴스
+      instance.volume = 1.0;
+      activeSound = { type: 'audio', el: instance };
+      instance.addEventListener('ended', () => {
+        if(activeSound && activeSound.el === instance) activeSound = null;
+      });
+      const p = instance.play();
+      if(p && p.catch){
+        p.catch((err) => {
+          console.warn('커스텀 알림음 재생 실패:', err);
+          if(activeSound && activeSound.el === instance) activeSound = null;
+          if(onError) onError(err);
+        });
+      }
+    }catch(e){
+      console.warn('커스텀 알림음 재생 실패:', e);
+      if(onError) onError(e);
+    }
+  }
+
+  // 실제 사이클 알림에서 사용 (저장된 설정 기준)
+  function playAlertSound(){
+    if(navigator.vibrate){
+      navigator.vibrate([200, 100, 200, 100, 200]); // 소리와 별개로 항상 진동
+    }
+    if(!soundCheckbox.checked) return;
+    if(customAudioEl){
+      playCustomAudio(customAudioEl, () => playDefaultBeep());
+    } else {
+      playDefaultBeep();
+    }
+  }
+
+  // 설정 패널의 "현재 선택된" 소스로 오디오 엘리먼트를 만든다 (테스트/적용 공용)
+  function buildAudioFromCurrentSelection(){
+    const source = document.querySelector('input[name="soundSource"]:checked').value;
+    if(source === 'file'){
+      const file = soundFileInput.files && soundFileInput.files[0];
+      if(!file) return { audio: null, error: '업로드된 파일이 없습니다.' };
+      const url = URL.createObjectURL(file);
+      return { audio: new Audio(url), objectUrl: url };
+    }
+    if(source === 'url'){
+      const url = soundUrlInput.value.trim();
+      if(!url) return { audio: null, error: 'URL을 입력해주세요.' };
+      return { audio: new Audio(url) };
+    }
+    return { audio: null }; // 기본음
+  }
+
+  function showSettingsMsg(text, type){
+    settingsMsg.textContent = text;
+    settingsMsg.className = 'settings-msg' + (type ? ' ' + type : '');
+  }
+
+  // ---- 타이머 ----
+  function formatTime(totalSeconds){
+    const m = Math.floor(totalSeconds / 60);
+    const s = Math.floor(totalSeconds % 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+
+  function updateZoneLabel(){
+    zoneLabelEl.innerHTML = `드랍 구간: <b>${formatTime(WINDOW_START)} ~ ${formatTime(WINDOW_END)}</b>`;
+  }
+
+  function tick(){
+    if(!running) return;
+    const elapsed = (Date.now() - startTime) / 1000;
+    clockEl.textContent = formatTime(elapsed);
+
+    const inWindow = elapsed >= WINDOW_START && elapsed <= WINDOW_END;
+    timerCard.classList.toggle('hot', inWindow);
+
+    if(inWindow && !alertPlayedThisCycle){
+      alertPlayedThisCycle = true;
+      playAlertSound();
+      updateControlNotification(elapsed, true); // 구간 진입: 진동/소리와 함께 알림 갱신
+    } else if(Math.floor(elapsed) % 2 === 0){
+      // 평소엔 2초 간격 정도로 조용히 알림 내용만 갱신 (진동 없음)
+      updateControlNotification(elapsed, false);
+    }
+  }
+
+  function startTimer(){
+    ensureAudioContext(); // 사용자 클릭 시점에 오디오 잠금 해제
+    running = true;
+    startTime = Date.now();
+    alertPlayedThisCycle = false;
+    startBtn.textContent = '정지';
+    startBtn.classList.add('running');
+    checkBtn.disabled = false;
+    tick();
+    rafId = setInterval(tick, 200); // setInterval: 백그라운드 탭에서도 계속 동작 (rAF는 완전히 멈춤)
+    updateControlNotification(0, false);
+  }
+
+  function stopTimer(){
+    running = false;
+    clearInterval(rafId);
+    stopCurrentSound();
+    timerCard.classList.remove('hot');
+    startBtn.textContent = '시작';
+    startBtn.classList.remove('running');
+    checkBtn.disabled = true;
+    clockEl.textContent = '0:00';
+    closeControlNotification();
+  }
+
+  function checkLap(){
+    if(!running) return;
+    stopCurrentSound(); // 재생 중인 알림음이 있으면 즉시 정지
+    const elapsed = (Date.now() - startTime) / 1000;
+    const inWindow = elapsed >= WINDOW_START && elapsed <= WINDOW_END;
+
+    laps.unshift({
+      elapsed: elapsed,
+      inWindow: inWindow,
+      timestamp: new Date()
+    });
+    renderLog();
+
+    // 타이머 리셋 후 재시작
+    startTime = Date.now();
+    alertPlayedThisCycle = false;
+    updateControlNotification(0, false);
+  }
+
+  function renderLog(){
+    logList.innerHTML = '';
+    logCount.textContent = laps.length;
+    logEmpty.style.display = laps.length === 0 ? 'block' : 'none';
+
+    laps.forEach((lap, i) => {
+      const li = document.createElement('li');
+      li.className = 'log-item' + (lap.inWindow ? ' in-window' : '');
+      const num = laps.length - i;
+      const hh = String(lap.timestamp.getHours()).padStart(2, '0');
+      const mm = String(lap.timestamp.getMinutes()).padStart(2, '0');
+      const ss = String(lap.timestamp.getSeconds()).padStart(2, '0');
+      li.innerHTML = `
+        <span class="idx">#${num}</span>
+        <span class="lap-time">${formatTime(lap.elapsed)}</span>
+        <span class="clock-time">${hh}:${mm}:${ss}</span>
+      `;
+      logList.appendChild(li);
+    });
+  }
+
+  startBtn.addEventListener('click', () => {
+    if(running){
+      stopTimer();
+    } else {
+      startTimer();
+    }
+  });
+
+  checkBtn.addEventListener('click', checkLap);
+
+  clearBtn.addEventListener('click', () => {
+    laps = [];
+    renderLog();
+  });
+
+  // ---- 설정 패널 ----
+  settingsLink.addEventListener('click', () => {
+    settingsPanel.classList.toggle('open');
+  });
+
+  soundFileInput.addEventListener('change', () => {
+    const file = soundFileInput.files && soundFileInput.files[0];
+    fileNameEl.textContent = file ? `선택됨: ${file.name}` : '';
+    if(file){
+      document.getElementById('soundSourceFile').checked = true;
+    }
+  });
+
+  soundUrlInput.addEventListener('focus', () => {
+    document.getElementById('soundSourceUrl').checked = true;
+  });
+
+  testSoundBtn.addEventListener('click', () => {
+    ensureAudioContext(); // 사용자 클릭이므로 여기서 오디오 잠금 해제됨
+    stopCurrentSound();
+    showSettingsMsg('', '');
+    const { audio, error, objectUrl } = buildAudioFromCurrentSelection();
+
+    if(error){
+      showSettingsMsg(error, 'error');
+      return;
+    }
+    if(!audio){
+      playDefaultBeep();
+      showSettingsMsg('기본음을 재생했습니다.', 'success');
+      return;
+    }
+    playCustomAudio(audio, () => {
+      showSettingsMsg('재생에 실패했습니다. URL/파일을 확인해주세요.', 'error');
+    });
+    audio.addEventListener('canplaythrough', () => {
+      showSettingsMsg('재생했습니다.', 'success');
+    }, { once: true });
+    // objectUrl은 테스트용이라 재생 후 잠시 뒤 해제
+    if(objectUrl){
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+    }
+  });
+
+  applySettingsBtn.addEventListener('click', () => {
+    const sm = parseInt(startMinInput.value, 10) || 0;
+    const ss = parseInt(startSecInput.value, 10) || 0;
+    const em = parseInt(endMinInput.value, 10) || 0;
+    const es = parseInt(endSecInput.value, 10) || 0;
+    const startSec = sm * 60 + ss;
+    const endSec = em * 60 + es;
+
+    if(endSec <= startSec){
+      showSettingsMsg('종료 시간은 시작 시간보다 커야 합니다.', 'error');
+      return;
+    }
+
+    WINDOW_START = startSec;
+    WINDOW_END = endSec;
+    updateZoneLabel();
+
+    // 사운드 적용
+    const { audio, error, objectUrl } = buildAudioFromCurrentSelection();
+    if(error){
+      showSettingsMsg(error, 'error');
+      return;
+    }
+    if(customAudioObjectUrl){
+      URL.revokeObjectURL(customAudioObjectUrl);
+      customAudioObjectUrl = null;
+    }
+    customAudioEl = audio; // null이면 기본음 사용
+    customAudioObjectUrl = objectUrl || null;
+
+    showSettingsMsg('설정이 적용되었습니다.', 'success');
+  });
+
+  // ---- PWA: 서비스워커 등록 + 알림바 컨트롤 ----
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js')
+      .then((reg) => { swRegistration = reg; })
+      .catch((e) => console.warn('서비스워커 등록 실패 (HTTPS로 호스팅해야 동작합니다):', e));
+
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      const data = event.data || {};
+      if(data.type !== 'notification-action') return;
+      if(data.action === 'check'){
+        checkLap();
+      } else if(data.action === 'stop'){
+        if(running) stopTimer();
+      }
+    });
+  }
+
+  if('Notification' in window && Notification.permission === 'granted'){
+    notifEnabled = true;
+    notifPermBtn.textContent = '🔔 알림바 컨트롤 켜짐';
+  }
+
+  notifPermBtn.addEventListener('click', async () => {
+    if(!('Notification' in window)){
+      notifMsg.textContent = '이 브라우저는 알림을 지원하지 않습니다.';
+      return;
+    }
+    if(!swRegistration){
+      notifMsg.textContent = '서비스워커가 아직 준비되지 않았습니다. HTTPS로 호스팅된 주소에서 열어주세요.';
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if(perm === 'granted'){
+      notifEnabled = true;
+      notifPermBtn.textContent = '🔔 알림바 컨트롤 켜짐';
+      notifMsg.textContent = '이제 알림바에서 체크/중지를 바로 누를 수 있어요.';
+      if(running) updateControlNotification((Date.now() - startTime) / 1000, false);
+    } else {
+      notifMsg.textContent = '알림 권한이 거부되었습니다. 브라우저 설정에서 다시 켤 수 있어요.';
+    }
+  });
+
+  function updateControlNotification(elapsed, isAlert){
+    if(!notifEnabled || !swRegistration || !running) return;
+    const inWindow = elapsed >= WINDOW_START && elapsed <= WINDOW_END;
+    const title = isAlert ? '🟠 드랍 구간 진입!' : '드랍 주기 타이머 작동 중';
+    const body = `경과 ${formatTime(elapsed)}` + (inWindow ? ' · 지금 등장 구간이에요' : '');
+
+    swRegistration.showNotification(title, {
+      tag: 'timer-control',
+      body: body,
+      icon: 'icons/icon-192.png',
+      badge: 'icons/icon-192.png',
+      renotify: isAlert,
+      silent: !isAlert,
+      vibrate: isAlert ? [200, 100, 200, 100, 200] : undefined,
+      actions: [
+        { action: 'check', title: '✅ 체크' },
+        { action: 'stop', title: '⏹ 중지' }
+      ],
+      requireInteraction: false
+    }).catch((e) => console.warn('알림 표시 실패:', e));
+  }
+
+  function closeControlNotification(){
+    if(!swRegistration) return;
+    swRegistration.getNotifications({ tag: 'timer-control' })
+      .then((list) => list.forEach((n) => n.close()))
+      .catch(() => {});
+  }
+
+  updateZoneLabel();
+  renderLog();
+</script>
+</body>
+</html>
+
