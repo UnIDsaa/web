@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Idle Iktah 전투 계산기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #171d14;
+    --bg-vignette: #10140d;
+    --panel: #1f2818;
+    --panel-line: #34401f;
+    --parchment: #ece4cd;
+    --parchment-line: #cfc19a;
+    --ink: #241d10;
+    --ink-soft: #5b5138;
+    --moss: #4f7a3f;
+    --moss-deep: #33511f;
+    --rust: #a8481f;
+    --rust-deep: #7a3216;
+    --gold: #c79a35;
+    --paper-shadow: rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at 50% -10%, #223018 0%, var(--bg) 55%, var(--bg-vignette) 100%);
+    color:var(--parchment);
+    font-family:'IBM Plex Mono', monospace;
+    padding:32px 18px 60px;
+  }
+  .wrap{max-width:1040px;margin:0 auto;}
+
+  header{margin-bottom:28px;}
+  header .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    letter-spacing:.14em;
+    color:var(--gold);
+    margin:0 0 6px;
+  }
+  h1{
+    font-family:'Roboto Slab', serif;
+    font-weight:700;
+    font-size:clamp(26px,4vw,38px);
+    margin:0 0 8px;
+    color:#f2ecd8;
+    line-height:1.15;
+  }
+  header p{
+    margin:0;
+    color:#b7c2a6;
+    font-size:14.5px;
+    max-width:640px;
+    line-height:1.6;
+  }
+  header p code{color:var(--gold);font-weight:500;}
+
+  .versus{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+    margin-bottom:18px;
+  }
+  @media (max-width:680px){ .versus{grid-template-columns:1fr;} }
+
+  .sheet{
+    background:var(--parchment);
+    color:var(--ink);
+    border-radius:4px;
+    padding:20px 20px 16px;
+    box-shadow:0 10px 26px var(--paper-shadow), inset 0 0 0 1px var(--parchment-line);
+    position:relative;
+  }
+  .sheet::before{
+    content:'';
+    position:absolute; left:0; top:14px; bottom:14px; width:4px;
+    border-radius:0 3px 3px 0;
+  }
+  .sheet.player::before{background:var(--moss);}
+  .sheet.enemy::before{background:var(--rust);}
+
+  .sheet h2{
+    font-family:'Roboto Slab',serif;
+    font-size:19px;
+    margin:0 0 2px;
+    letter-spacing:.01em;
+  }
+  .sheet .role{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin:0 0 14px;
+    text-transform:uppercase;
+    letter-spacing:.1em;
+  }
+
+  .field-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 12px;
+    margin-bottom:12px;
+  }
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    letter-spacing:.02em;
+  }
+  .field input{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:15px;
+    font-weight:500;
+    padding:7px 8px;
+    border:1px solid var(--parchment-line);
+    border-radius:3px;
+    background:#fbf7ec;
+    color:var(--ink);
+  }
+  .field input:focus{outline:2px solid var(--gold); outline-offset:0;}
+  .sheet.player .field input:focus{outline-color:var(--moss);}
+  .sheet.enemy .field input:focus{outline-color:var(--rust);}
+
+  .cl-row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-top:1px dashed var(--parchment-line);
+    padding-top:10px; margin-top:4px;
+    font-size:12.5px; color:var(--ink-soft);
+  }
+  .cl-row b{font-size:16px;color:var(--ink);font-family:'Roboto Slab',serif;}
+
+  .goal-toggle{
+    margin-top:12px;
+    width:100%;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    letter-spacing:.03em;
+    padding:9px 10px;
+    border-radius:3px;
+    border:1px solid var(--rust-deep);
+    background:transparent;
+    color:var(--rust-deep);
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .goal-toggle:hover{background:var(--rust-deep);color:#f6ead9;}
+  .goal-toggle[aria-expanded="true"]{background:var(--rust-deep);color:#f6ead9;}
+
+  .goal-panel{
+    background:var(--panel);
+    border:1px solid var(--gold);
+    border-radius:4px;
+    padding:18px 20px 20px;
+    margin-bottom:22px;
+  }
+  .goal-panel h3{
+    font-family:'Roboto Slab',serif;
+    font-size:16px;
+    margin:0 0 4px;
+    color:var(--gold);
+  }
+  .goal-panel .note{font-size:12px;color:#9fac8b;margin:0 0 14px;line-height:1.55;}
+  .goal-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+  @media (max-width:680px){ .goal-grid{grid-template-columns:1fr;} }
+  .goal-col .field-inline label{min-width:auto;}
+  .goal-col .field-inline input{width:90px;}
+
+  .config-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+    margin-bottom:22px;
+  }
+  @media (max-width:680px){ .config-row{grid-template-columns:1fr;} }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:4px;
+    padding:18px 20px;
+  }
+  .panel h3{
+    font-family:'Roboto Slab',serif;
+    font-size:15px;
+    margin:0 0 4px;
+    color:var(--gold);
+  }
+  .panel .note{
+    font-size:12px;
+    color:#9fac8b;
+    margin:0 0 12px;
+    line-height:1.55;
+  }
+  .panel .field-inline{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    margin-bottom:8px;
+  }
+  .panel .field-inline label{font-size:13px;color:#d7dcc6;min-width:120px;}
+  .panel input, .panel select{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:14px;
+    padding:6px 8px;
+    border-radius:3px;
+    border:1px solid var(--panel-line);
+    background:#111a0c;
+    color:var(--parchment);
+  }
+  .panel input{width:100px;}
+  .panel input:focus, .panel select:focus{outline:2px solid var(--gold);outline-offset:0;}
+
+  .ledger{
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:4px;
+    padding:22px 24px 26px;
+  }
+  .ledger h2{
+    font-family:'Roboto Slab',serif;
+    font-size:20px;
+    margin:0 0 18px;
+    color:#f2ecd8;
+    display:flex; align-items:baseline; gap:10px;
+  }
+  .ledger h2 span{font-size:12px;color:var(--gold);font-family:'IBM Plex Mono',monospace;letter-spacing:.08em;}
+
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:14px;
+    margin-bottom:22px;
+  }
+  .stat-card{
+    background:#141c0e;
+    border:1px solid var(--panel-line);
+    border-radius:4px;
+    padding:14px 16px;
+  }
+  .stat-card .label{font-size:11.5px;color:#9fac8b;letter-spacing:.05em;margin-bottom:6px;}
+  .stat-card .value{font-size:24px;font-weight:600;color:var(--parchment);font-family:'IBM Plex Mono',monospace;}
+  .stat-card .value.small{font-size:16px;}
+  .stat-card .sub{font-size:12px;color:#7d8a68;margin-top:4px;}
+  .stat-card.moss{border-left:3px solid var(--moss);}
+  .stat-card.rust{border-left:3px solid var(--rust);}
+  .stat-card.gold{border-left:3px solid var(--gold);}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  thead th{
+    text-align:left; font-weight:500; color:#9fac8b;
+    font-size:11.5px; letter-spacing:.05em; text-transform:uppercase;
+    padding:0 10px 8px; border-bottom:1px solid var(--panel-line);
+  }
+  tbody td{
+    padding:9px 10px;
+    border-bottom:1px solid #263019;
+    color:var(--parchment);
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody td.num{font-weight:600;color:#f2ecd8;}
+  tbody tr.highlight td{background:rgba(199,154,53,.08);}
+
+  .section-title{
+    font-size:13px; color:var(--gold); letter-spacing:.06em;
+    margin:26px 0 10px; padding-top:16px; border-top:1px dashed var(--panel-line);
+  }
+  .section-title:first-of-type{margin-top:0;padding-top:0;border-top:none;}
+
+  footer{margin-top:26px;font-size:12px;color:#6d7a5c;line-height:1.7;}
+  footer a{color:var(--gold);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">IDLE IKTAH · COMBAT SHEET</p>
+    <h1>전투 계산기</h1>
+    <p>Attack / Strength / Defence / Health 레벨을 입력하면 위키 공식 <code>Hit = 50 + 0.75×(공격−방어)</code> 기준으로
+    명중률·데미지·물약 소모량·기대 경험치를 계산합니다.</p>
+  </header>
+
+  <div class="versus">
+    <div class="sheet player">
+      <h2>플레이어</h2>
+      <p class="role">Player Combat Stats</p>
+      <div class="field-grid">
+        <div class="field"><label for="pAtk">Attack</label><input id="pAtk" type="number" value="40" min="1"></div>
+        <div class="field"><label for="pStr">Strength</label><input id="pStr" type="number" value="40" min="1"></div>
+        <div class="field"><label for="pDef">Defence</label><input id="pDef" type="number" value="35" min="1"></div>
+        <div class="field"><label for="pHp">Health</label><input id="pHp" type="number" value="35" min="1"></div>
+      </div>
+      <div class="field-grid" style="grid-template-columns:1fr;">
+        <div class="field"><label for="pSpeed">공격 속도 (초/타)</label><input id="pSpeed" type="number" value="2.4" min="0.1" step="0.1"></div>
+      </div>
+      <div class="cl-row"><span>전투 레벨 (평균)</span><b id="pCL">–</b></div>
+      <div class="cl-row"><span>최대 HP (10 + Health)</span><b id="pMaxHp">–</b></div>
+    </div>
+
+    <div class="sheet enemy">
+      <h2>적 (몬스터)</h2>
+      <p class="role">Enemy Combat Stats</p>
+      <div class="field-grid">
+        <div class="field"><label for="eAtk">Attack</label><input id="eAtk" type="number" value="35" min="1"></div>
+        <div class="field"><label for="eStr">Strength</label><input id="eStr" type="number" value="35" min="1"></div>
+        <div class="field"><label for="eDef">Defence</label><input id="eDef" type="number" value="30" min="1"></div>
+        <div class="field"><label for="eHp">Health</label><input id="eHp" type="number" value="30" min="1"></div>
+      </div>
+      <div class="field-grid" style="grid-template-columns:1fr;">
+        <div class="field"><label for="eSpeed">공격 속도 (초/타)</label><input id="eSpeed" type="number" value="2.6" min="0.1" step="0.1"></div>
+      </div>
+      <div class="cl-row"><span>전투 레벨 (평균)</span><b id="eCL">–</b></div>
+      <div class="cl-row"><span>최대 HP (10 + Health)</span><b id="eMaxHp">–</b></div>
+      <button type="button" id="goalToggle" class="goal-toggle">목표 명중률 · 회피율 계산 ▾</button>
+    </div>
+  </div>
+
+  <div class="goal-panel" id="goalPanel" hidden>
+    <h3>목표 스탯 역산</h3>
+    <p class="note">위 적(enemy) 스탯을 기준으로, 원하는 명중률/회피율을 달성하기 위해 플레이어에게 필요한 최소 레벨을 계산합니다.</p>
+    <div class="goal-grid">
+      <div class="goal-col">
+        <div class="field-inline">
+          <label for="goalHit">목표 명중률 (%)</label>
+          <input id="goalHit" type="number" value="100" min="0" max="100" step="0.1">
+        </div>
+        <div class="stat-card moss" style="margin-top:10px;">
+          <div class="label">필요한 Attack 레벨</div>
+          <div class="value" id="goalAtkResult">–</div>
+          <div class="sub" id="goalAtkCalc">–</div>
+        </div>
+      </div>
+      <div class="goal-col">
+        <div class="field-inline">
+          <label for="goalAvoid">목표 회피율 (%)</label>
+          <input id="goalAvoid" type="number" value="100" min="0" max="100" step="0.1">
+        </div>
+        <div class="stat-card rust" style="margin-top:10px;">
+          <div class="label">필요한 Defence 레벨</div>
+          <div class="value" id="goalDefResult">–</div>
+          <div class="sub" id="goalDefCalc">–</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="config-row">
+    <div class="panel">
+      <h3>물약 · 시간 설정</h3>
+      <p class="note">적에게 받는 초당 기대 데미지를 물약 1개당 회복량으로 나눠 평균 소모량을 계산합니다 (HP 80% 이하 자동 섭취 기준의 근사치).</p>
+      <div class="field-inline">
+        <label for="potionHeal">물약 1개 회복량 (HP)</label>
+        <input id="potionHeal" type="number" value="20" min="1">
+      </div>
+      <div class="field-inline">
+        <label for="customDur">지정 시간</label>
+        <input id="customDur" type="number" value="30" min="1">
+        <select id="customUnit">
+          <option value="1">초</option>
+          <option value="60" selected>분</option>
+          <option value="3600">시간</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>경험치 설정</h3>
+      <p class="note">Idle Iktah는 데미지→경험치 환산 공식이 공식적으로 공개되어 있지 않습니다. 아래 배율(데미지 1당 XP)을 게임 내 실측값에 맞게 직접 조정하세요. 기본값 4는 유사 방치형 게임들의 통상적인 비율을 참고한 추정치입니다.</p>
+      <div class="field-inline">
+        <label for="xpMult">XP 배율 (per 데미지)</label>
+        <input id="xpMult" type="number" value="4" min="0" step="0.1">
+      </div>
+    </div>
+  </div>
+
+  <div class="ledger">
+    <h2>계산 결과 <span id="matchupLabel"></span></h2>
+
+    <div class="section-title">명중률 / 회피율 / 데미지 구간</div>
+    <div class="stat-grid">
+      <div class="stat-card moss">
+        <div class="label">플레이어 명중률</div>
+        <div class="value" id="pHitChance">–</div>
+        <div class="sub" id="pHitCalc">–</div>
+      </div>
+      <div class="stat-card moss">
+        <div class="label">플레이어 데미지 구간 (적중 시)</div>
+        <div class="value small" id="pDmgRange">–</div>
+        <div class="sub" id="pDmgAvg">–</div>
+      </div>
+      <div class="stat-card rust">
+        <div class="label">적 명중률 (플레이어 회피율 반대)</div>
+        <div class="value" id="eHitChance">–</div>
+        <div class="sub" id="eHitCalc">–</div>
+      </div>
+      <div class="stat-card rust">
+        <div class="label">적 데미지 구간 (적중 시)</div>
+        <div class="value small" id="eDmgRange">–</div>
+        <div class="sub" id="eDmgAvg">–</div>
+      </div>
+    </div>
+
+    <div class="section-title">초당 기대 데미지 (DPS)</div>
+    <table>
+      <thead><tr><th>방향</th><th>기대 데미지 / 1타</th><th>공격 속도</th><th>DPS</th></tr></thead>
+      <tbody>
+        <tr><td>플레이어 → 적</td><td class="num" id="pDpaOut">–</td><td id="pSpeedOut">–</td><td class="num" id="pDpsOut">–</td></tr>
+        <tr><td>적 → 플레이어</td><td class="num" id="eDpaOut">–</td><td id="eSpeedOut">–</td><td class="num" id="eDpsOut">–</td></tr>
+      </tbody>
+    </table>
+
+    <div class="section-title">물약 소모 평균치 (받는 데미지 기준)</div>
+    <table>
+      <thead><tr><th>기간</th><th>예상 피해량 (HP)</th><th>물약 소모 개수</th></tr></thead>
+      <tbody>
+        <tr><td>초당</td><td id="potDmgSec">–</td><td class="num" id="potSec">–</td></tr>
+        <tr><td>10분당</td><td id="potDmg10m">–</td><td class="num" id="pot10m">–</td></tr>
+        <tr><td>1시간당</td><td id="potDmg1h">–</td><td class="num" id="pot1h">–</td></tr>
+        <tr class="highlight"><td id="potCustomLabel">지정 시간당</td><td id="potDmgCustom">–</td><td class="num" id="potCustom">–</td></tr>
+      </tbody>
+    </table>
+
+    <div class="section-title">평균 획득 경험치 (추정치)</div>
+    <table>
+      <thead><tr><th>기간</th><th>기대 XP</th></tr></thead>
+      <tbody>
+        <tr><td>공격 1타당</td><td class="num" id="xpPerHit">–</td></tr>
+        <tr><td>초당</td><td class="num" id="xpSec">–</td></tr>
+        <tr><td>10분당</td><td class="num" id="xp10m">–</td></tr>
+        <tr><td>1시간당</td><td class="num" id="xp1h">–</td></tr>
+        <tr class="highlight"><td id="xpCustomLabel">지정 시간당</td><td class="num" id="xpCustom">–</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    공식 출처: Idle Iktah Wiki (idleiktah.wiki.gg) — Hit Chance = 50 + 0.75×(공격−방어), Max Hit = 1 + ⌊Strength÷3⌋, 최소 데미지 1 (빗나가면 0).
+    경험치 배율은 공식 미공개 추정치이므로 실측 후 위 설정값을 조정해 사용하세요.
+  </footer>
+
+</div>
+
+<script>
+function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+function num(id){ return parseFloat(document.getElementById(id).value) || 0; }
+function fmt(v, d){ return (isFinite(v)?v:0).toLocaleString('ko-KR', {minimumFractionDigits:d, maximumFractionDigits:d}); }
+
+function calc(){
+  const pAtk=num('pAtk'), pStr=num('pStr'), pDef=num('pDef'), pHp=num('pHp'), pSpeed=Math.max(0.1,num('pSpeed'));
+  const eAtk=num('eAtk'), eStr=num('eStr'), eDef=num('eDef'), eHp=num('eHp'), eSpeed=Math.max(0.1,num('eSpeed'));
+  const potionHeal=Math.max(1,num('potionHeal'));
+  const customDur=Math.max(1,num('customDur'));
+  const customUnitSec=num('customUnit');
+  const xpMult=num('xpMult');
+
+  // Combat levels
+  const pCL=(pAtk+pStr+pDef+pHp)/4;
+  const eCL=(eAtk+eStr+eDef+eHp)/4;
+  document.getElementById('pCL').textContent=fmt(pCL,2);
+  document.getElementById('eCL').textContent=fmt(eCL,2);
+  document.getElementById('pMaxHp').textContent=(10+pHp)+' HP';
+  document.getElementById('eMaxHp').textContent=(10+eHp)+' HP';
+  document.getElementById('matchupLabel').textContent = `— Lv ${pCL.toFixed(1)} vs Lv ${eCL.toFixed(1)}`;
+
+  // Hit chances
+  const pX = pAtk-eDef;
+  const pHitChance = clamp(50+0.75*pX,0,100);
+  const eX = eAtk-pDef;
+  const eHitChance = clamp(50+0.75*eX,0,100); // = enemy's chance to land on player = 100 - player avoid chance
+
+  document.getElementById('pHitChance').textContent = fmt(pHitChance,1)+'%';
+  document.getElementById('pHitCalc').textContent = `X = ${pAtk} − ${eDef} = ${pX} → 50 + 0.75×${pX}`;
+  document.getElementById('eHitChance').textContent = fmt(eHitChance,1)+'%';
+  document.getElementById('eHitCalc').textContent = `X = ${eAtk} − ${pDef} = ${eX} → 50 + 0.75×${eX} (플레이어 회피율 ${fmt(100-eHitChance,1)}%)`;
+
+  // Damage ranges
+  const pMaxHit = 1+Math.floor(pStr/3);
+  const pAvgHit = (1+pMaxHit)/2;
+  const eMaxHit = 1+Math.floor(eStr/3);
+  const eAvgHit = (1+eMaxHit)/2;
+
+  document.getElementById('pDmgRange').textContent = `1 – ${pMaxHit}`;
+  document.getElementById('pDmgAvg').textContent = `적중 시 평균 ${fmt(pAvgHit,2)} 데미지 (Max Hit = 1+⌊${pStr}/3⌋)`;
+  document.getElementById('eDmgRange').textContent = `1 – ${eMaxHit}`;
+  document.getElementById('eDmgAvg').textContent = `적중 시 평균 ${fmt(eAvgHit,2)} 데미지 (Max Hit = 1+⌊${eStr}/3⌋)`;
+
+  // Expected damage per attack (including miss chance) & DPS
+  const pDpa = (pHitChance/100)*pAvgHit;
+  const eDpa = (eHitChance/100)*eAvgHit;
+  const pDps = pDpa/pSpeed;
+  const eDps = eDpa/eSpeed;
+
+  document.getElementById('pDpaOut').textContent = fmt(pDpa,3);
+  document.getElementById('pSpeedOut').textContent = pSpeed+'초';
+  document.getElementById('pDpsOut').textContent = fmt(pDps,3);
+  document.getElementById('eDpaOut').textContent = fmt(eDpa,3);
+  document.getElementById('eSpeedOut').textContent = eSpeed+'초';
+  document.getElementById('eDpsOut').textContent = fmt(eDps,3);
+
+  // Potion consumption (based on damage player receives, i.e. eDps)
+  const periods = [
+    {sec:1, dmgId:'potDmgSec', potId:'potSec'},
+    {sec:600, dmgId:'potDmg10m', potId:'pot10m'},
+    {sec:3600, dmgId:'potDmg1h', potId:'pot1h'},
+  ];
+  periods.forEach(p=>{
+    const dmg = eDps*p.sec;
+    document.getElementById(p.dmgId).textContent = fmt(dmg,1)+' HP';
+    document.getElementById(p.potId).textContent = fmt(dmg/potionHeal,2)+' 개';
+  });
+  const customSec = customDur*customUnitSec;
+  const customUnitLabel = {1:'초',60:'분',3600:'시간'}[customUnitSec] || '초';
+  const customDmg = eDps*customSec;
+  document.getElementById('potCustomLabel').textContent = `지정 시간당 (${customDur}${customUnitLabel})`;
+  document.getElementById('potDmgCustom').textContent = fmt(customDmg,1)+' HP';
+  document.getElementById('potCustom').textContent = fmt(customDmg/potionHeal,2)+' 개';
+
+  // XP
+  const xpPerHit = pDpa*xpMult;
+  const xpPerSec = xpPerHit/pSpeed;
+  document.getElementById('xpPerHit').textContent = fmt(xpPerHit,3)+' XP';
+  document.getElementById('xpSec').textContent = fmt(xpPerSec,3)+' XP';
+  document.getElementById('xp10m').textContent = fmt(xpPerSec*600,1)+' XP';
+  document.getElementById('xp1h').textContent = fmt(xpPerSec*3600,1)+' XP';
+  document.getElementById('xpCustomLabel').textContent = `지정 시간당 (${customDur}${customUnitLabel})`;
+  document.getElementById('xpCustom').textContent = fmt(xpPerSec*customSec,1)+' XP';
+
+  // Goal stat reverse-calculation (needs current enemy Def/Atk, computed here so it stays live)
+  const goalHit = clamp(num('goalHit'),0,100);
+  const goalAvoid = clamp(num('goalAvoid'),0,100);
+
+  const neededAtkRaw = eDef + (goalHit-50)/0.75;
+  const neededAtk = Math.max(1, Math.ceil(neededAtkRaw));
+  document.getElementById('goalAtkResult').textContent = neededAtk;
+  document.getElementById('goalAtkCalc').textContent =
+    `${goalHit}% = 50+0.75×(Atk−${eDef}) → Atk ≥ ${fmt(neededAtkRaw,2)}`;
+
+  const neededDefRaw = eAtk + (goalAvoid-50)/0.75;
+  const neededDef = Math.max(1, Math.ceil(neededDefRaw));
+  document.getElementById('goalDefResult').textContent = neededDef;
+  document.getElementById('goalDefCalc').textContent =
+    `${goalAvoid}% = 50+0.75×(Def−${eAtk}) → Def ≥ ${fmt(neededDefRaw,2)}`;
+}
+
+document.querySelectorAll('input, select').forEach(el=>el.addEventListener('input', calc));
+
+const goalToggle = document.getElementById('goalToggle');
+const goalPanel = document.getElementById('goalPanel');
+goalToggle.addEventListener('click', ()=>{
+  const isOpen = !goalPanel.hidden;
+  goalPanel.hidden = isOpen;
+  goalToggle.setAttribute('aria-expanded', String(!isOpen));
+  goalToggle.textContent = isOpen ? '목표 명중률 · 회피율 계산 ▾' : '목표 명중률 · 회피율 계산 ▴';
+});
+
+calc();
+</script>
+</body>
+</html>

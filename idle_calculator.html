@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Idle Iktah 레벨업 계산기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14171f;
+    --panel: #1b1f2a;
+    --panel-2: #212637;
+    --border: #2d3346;
+    --border-soft: #262b3c;
+    --text: #eae7dd;
+    --text-dim: #9aa0b8;
+    --text-faint: #6b7188;
+    --accent: #e0a63e;
+    --accent-strong: #f2c469;
+    --good: #7ab98a;
+    --bad: #d98080;
+    --level-green: #4ade80;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'Manrope',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; background-image: radial-gradient(circle at 15% -10%, rgba(224,166,62,0.08), transparent 40%), radial-gradient(circle at 85% 0%, rgba(122,185,138,0.05), transparent 45%); }
+  .wrap { max-width:1180px; margin:0 auto; padding:32px 20px 80px; }
+  header.top { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:24px; margin-bottom:28px; border-bottom:1px solid var(--border-soft); }
+  header.top h1 { font-size:22px; font-weight:800; margin:0; letter-spacing:-0.01em; }
+  header.top h1 span { color:var(--accent); }
+  header.top p { margin:4px 0 0; color:var(--text-dim); font-size:13.5px; }
+  .layout { display:grid; grid-template-columns:1.55fr 1fr; gap:22px; align-items:start; }
+  @media (max-width:880px){ .layout{ grid-template-columns:1fr; } .side{ order:2; } }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px 22px; margin-bottom:18px; }
+  .card h2 { font-size:15px; font-weight:700; margin:0 0 4px; display:flex; align-items:center; gap:8px; }
+  .card h3 { font-size:13px; font-weight:700; margin:14px 0 10px; color:var(--accent-strong); }
+  .card h3:first-of-type { margin-top:4px; }
+  .card .hint { color:var(--text-faint); font-size:12.5px; margin:0 0 16px; line-height:1.5; }
+  .subsection { padding:14px; background:var(--panel-2); border:1px solid var(--border-soft); border-radius:var(--radius-sm); margin-bottom:12px; }
+  .field-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:14px; }
+  .field { display:flex; flex-direction:column; gap:6px; }
+  .field label { font-size:12.5px; color:var(--text-dim); font-weight:500; }
+  .field .input-with-unit { display:flex; align-items:stretch; }
+  input[type="number"], input[type="text"], select, textarea { background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:var(--radius-sm); padding:9px 10px; font-family:'JetBrains Mono',monospace; font-size:14px; width:100%; outline:none; transition:border-color .15s ease; }
+  .subsection input[type="number"], .subsection input[type="text"] { background: var(--panel); }
+  input[type="text"], textarea { font-family:'Manrope',sans-serif; }
+  input:focus, select:focus, textarea:focus { border-color:var(--accent); }
+  input:disabled, select:disabled { opacity:0.45; cursor:not-allowed; }
+  .input-with-unit input { border-radius:var(--radius-sm) 0 0 var(--radius-sm); border-right:none; }
+  .input-with-unit select { width:auto; border-radius:0 var(--radius-sm) var(--radius-sm) 0; border-left:1px solid var(--border); }
+  button, .btn { font-family:'Manrope',sans-serif; font-size:13px; font-weight:600; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--panel-2); color:var(--text); padding:9px 14px; cursor:pointer; transition:border-color .15s ease, background .15s ease; }
+  button:hover { border-color:var(--accent); }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#1a1400; }
+  button.primary:hover { background:var(--accent-strong); border-color:var(--accent-strong); }
+  button:disabled { opacity:0.4; cursor:not-allowed; }
+  .btn-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .checkbox-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .checkbox-row input[type="checkbox"] { width:16px; height:16px; accent-color:var(--accent); }
+  .checkbox-row label { font-size:13.5px; color:var(--text); cursor:pointer; }
+  .checkbox-row .sub { color:var(--text-faint); font-size:11.5px; margin-left:4px; }
+  .bonus-readout { display:inline-block; margin-top:2px; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--accent-strong); background:var(--panel-2); border:1px solid var(--border-soft); border-radius:var(--radius-sm); padding:5px 10px; }
+  #l-display { color:var(--level-green); font-weight:700; border-color:var(--level-green); }
+  #l-display:disabled { color:var(--level-green); opacity:0.55; }
+  label[for="l-display"] { color:var(--level-green); }
+  .result-card { background:linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%); border:1px solid var(--border); }
+  .hero-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:12px 0 18px; }
+  @media (max-width:640px){ .hero-grid{ grid-template-columns:1fr; } }
+  .result-hero { display:flex; flex-direction:column; gap:2px; padding:16px 16px 14px; background:var(--panel-2); border:1px solid var(--border-soft); border-top:3px solid var(--accent); border-radius:var(--radius-sm); min-width:0; }
+  .result-hero.goal { border-top-color:var(--good); }
+  .result-hero .tag { font-size:11px; font-weight:700; letter-spacing:0.04em; color:var(--text-faint); margin-bottom:2px; }
+  .result-hero .label { font-size:12.5px; color:var(--text-dim); }
+  .result-hero .value { font-family:'JetBrains Mono',monospace; font-size:30px; font-weight:700; color:var(--accent-strong); line-height:1.25; overflow-wrap:anywhere; }
+  .result-hero .value.done { color:var(--good); font-size:24px; }
+  .result-hero .value.warn { color:var(--bad); font-size:18px; }
+  .result-hero .sub-value { margin-top:6px; font-size:12.5px; color:var(--text-dim); white-space:pre-line; line-height:1.5; }
+  .result-hero .sub-value:empty { display:none; }
+  .input-with-unit button { border-radius:0 var(--radius-sm) var(--radius-sm) 0; padding:0 12px; white-space:nowrap; }
+  .stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:14px; margin-bottom:8px; }
+  .stat { background:var(--panel-2); border:1px solid var(--border-soft); border-radius:var(--radius-sm); padding:12px 14px; }
+  .stat .stat-label { font-size:11.5px; color:var(--text-faint); margin-bottom:4px; }
+  .stat .stat-value { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--text); }
+  .stat .stat-value.dim { color:var(--text-faint); font-size:12.5px; font-weight:500; }
+  details.breakdown { margin-top:16px; }
+  details.breakdown summary { cursor:pointer; font-size:12.5px; color:var(--text-dim); user-select:none; }
+  details.breakdown summary:hover { color:var(--accent); }
+  .table-scroll { max-height:260px; overflow-y:auto; margin-top:10px; border:1px solid var(--border-soft); border-radius:var(--radius-sm); }
+  table { width:100%; border-collapse:collapse; font-family:'JetBrains Mono',monospace; font-size:12.5px; }
+  table th, table td { padding:7px 10px; text-align:right; border-bottom:1px solid var(--border-soft); }
+  table th:first-child, table td:first-child { text-align:left; font-family:'Manrope',sans-serif; }
+  table th { color:var(--text-faint); font-weight:500; position:sticky; top:0; background:var(--panel-2); }
+  table td { color:var(--text-dim); }
+  table tr:last-child td { border-bottom:none; }
+  .msg { font-size:13px; padding:10px 12px; border-radius:var(--radius-sm); margin-top:4px; }
+  .msg.warn { background:rgba(217,128,128,0.12); color:var(--bad); border:1px solid rgba(217,128,128,0.3); }
+  .side .card { margin-bottom:18px; }
+  .preset-list { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+  .preset-item { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border-soft); background:var(--panel-2); }
+  .preset-item.active { border-color:var(--accent); }
+  .preset-item .name { font-size:13px; font-weight:600; }
+  .preset-item .meta { font-size:11px; color:var(--text-faint); font-family:'JetBrains Mono',monospace; }
+  .preset-item .preset-memo { font-size:11.5px; color:var(--text-dim); margin-top:3px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .preset-item .actions { display:flex; gap:6px; }
+  .preset-item .actions button { padding:4px 8px; font-size:11.5px; }
+  .preset-empty { color:var(--text-faint); font-size:12.5px; padding:6px 0; }
+  textarea#notes { min-height:200px; resize:vertical; line-height:1.6; font-size:13.5px; }
+  .save-row { display:flex; gap:8px; margin-top:12px; }
+  .save-row input { flex:1; }
+  .file-import { display:none; }
+  footer.foot { margin-top:26px; color:var(--text-faint); font-size:11.5px; line-height:1.6; text-align:center; }
+  .autosave-note { font-size:11px; color:var(--text-faint); margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>Idle <span>Iktah</span> 레벨업 계산기</h1>
+      <p>경험치 공식과 맵별 파밍 효율을 기반으로 목표 레벨까지 필요한 시간과 포션 개수를 계산해요.</p>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <div class="main">
+
+      <div class="card">
+        <h2>성장 공식</h2>
+        <p class="hint">필요경험치(n) = round( 기준값 × (1 + 성장률%) ^ (n−1) ). 기본값은 실측 데이터를 회귀 분석해 추정한 값이에요.</p>
+        <div class="field-row">
+          <div class="field"><label for="f-base">기준값 (레벨1 필요경험치)</label><input type="number" id="f-base" step="0.01" value="63.5" /></div>
+          <div class="field"><label for="f-growth">레벨당 성장률 (%)</label><input type="number" id="f-growth" step="0.001" value="10.41" /></div>
+          <div class="field"><label for="f-maxlevel">최대 레벨</label><input type="number" id="f-maxlevel" step="1" value="99" /></div>
+        </div>
+        <details class="breakdown">
+          <summary>공식 미리보기 (레벨별 필요경험치 확인)</summary>
+          <div class="table-scroll"><table id="formula-preview-table"><thead><tr><th>레벨</th><th>다음 레벨까지 필요경험치</th></tr></thead><tbody></tbody></table></div>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>스킬 포션 설정</h2>
+        <p class="hint">포션은 1개당 5분간 지속되며, 게임에 보이는 레벨(표시레벨)만 일시적으로 올려줘요. 실질레벨(영구 스탯)은 그대로예요.</p>
+        <div class="checkbox-row">
+          <input type="checkbox" id="pot-use" />
+          <label for="pot-use">스킬 포션 사용 <span class="sub">(+4)</span></label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="pot-mask" />
+          <label for="pot-mask">연금술사의 가면 착용 <span class="sub">(포션 사용 시 +8로 상승, 미착용/포션 미사용 시 무효)</span></label>
+        </div>
+        <span class="bonus-readout" id="pot-bonus-readout">현재 보너스: +0</span>
+      </div>
+
+      <div class="card">
+        <h2>레벨 정보</h2>
+        <div class="field-row">
+          <div class="field"><label for="l-real">실질레벨</label><input type="number" id="l-real" step="1" value="1" /></div>
+          <div class="field"><label for="l-display">표시레벨 (게임 화면 기준)</label><input type="number" id="l-display" step="1" value="1" disabled /></div>
+          <div class="field"><label for="l-progress">현재 레벨에서 이미 모은 경험치</label><input type="number" id="l-progress" step="1" value="0" /></div>
+          <div class="field"><label for="l-target">목표 레벨 (실질레벨 기준)</label><input type="number" id="l-target" step="1" value="10" /></div>
+          <div class="field"><label for="cur-time">현재 시간</label>
+            <div class="input-with-unit"><input type="datetime-local" id="cur-time" /><button type="button" id="btn-now">지금</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>맵 정보</h2>
+        <p class="hint">지금 당장은 현재 맵과 다음 맵, 두 구간만 입력해요. 다음 맵 정보를 모르면 언락 표시레벨만 입력하고 나머지는 비워두세요 — 그 경우 '다음 맵 이동까지' 시간만 계산하고, 최종 소요시간은 현재 맵 기준으로 계산돼요. 나중에 다음 맵의 경험치/소요시간을 알게 되면 여기에 입력하고, 위 '레벨 정보'의 현재 레벨·경험치와 현재 시간(지금 버튼)을 갱신하세요. 그 시점부터 전부 다시 계산돼요.</p>
+
+        <h3>현재 맵</h3>
+        <div class="subsection">
+          <div class="field-row">
+            <div class="field"><label for="m-cur-name">이름</label><input type="text" id="m-cur-name" value="현재 맵" /></div>
+            <div class="field"><label for="m-cur-unlock">언락 표시레벨</label><input type="number" id="m-cur-unlock" step="1" value="1" /></div>
+            <div class="field"><label for="m-cur-exp">1회당 경험치</label><input type="number" id="m-cur-exp" step="1" value="10" /></div>
+            <div class="field"><label for="m-cur-time">1회당 소요시간</label>
+              <div class="input-with-unit">
+                <input type="number" id="m-cur-time" step="0.1" value="5" />
+                <select id="m-cur-unit"><option value="1" selected>초</option><option value="60">분</option><option value="3600">시간</option></select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>다음 맵 (선택)</h3>
+        <div class="subsection">
+          <div class="field-row">
+            <div class="field"><label for="m-next-name">이름</label><input type="text" id="m-next-name" placeholder="예: 은" /></div>
+            <div class="field"><label for="m-next-unlock">언락 표시레벨</label><input type="number" id="m-next-unlock" step="1" placeholder="예: 30" /></div>
+            <div class="field"><label for="m-next-exp">1회당 경험치</label><input type="number" id="m-next-exp" step="1" placeholder="모르면 비워두기" /></div>
+            <div class="field"><label for="m-next-time">1회당 소요시간</label>
+              <div class="input-with-unit">
+                <input type="number" id="m-next-time" step="0.1" placeholder="모르면 비워두기" />
+                <select id="m-next-unit"><option value="1" selected>초</option><option value="60">분</option><option value="3600">시간</option></select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card result-card">
+        <h2>결과</h2>
+        <div class="hero-grid">
+          <div class="result-hero next">
+            <div class="tag">STEP 1 · 다음 맵</div>
+            <div class="label" id="n-label">다음 맵 이동까지 예상 소요 시간</div>
+            <div class="value" id="n-time">-</div>
+            <div class="sub-value" id="n-finish"></div>
+            <div class="sub-value" id="n-sub"></div>
+          </div>
+          <div class="result-hero goal">
+            <div class="tag">FINAL · 목표 레벨</div>
+            <div class="label" id="r-time-label">목표 레벨까지 예상 소요 시간</div>
+            <div class="value" id="r-time">-</div>
+            <div class="sub-value" id="r-time-finish"></div>
+            <div class="sub-value" id="r-time-sub"></div>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><div class="stat-label">필요 총 경험치</div><div class="stat-value" id="r-totalexp">-</div></div>
+          <div class="stat"><div class="stat-label">남은 필요 경험치</div><div class="stat-value" id="r-remainexp">-</div></div>
+          <div class="stat"><div class="stat-label">필요 파밍 횟수</div><div class="stat-value" id="r-runs">-</div></div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><div class="stat-label">필요 포션 (맵 이동 시)</div><div class="stat-value" id="r-potion-switch">-</div></div>
+          <div class="stat"><div class="stat-label">필요 포션 (이동 안 할 시)</div><div class="stat-value" id="r-potion-noswitch">-</div></div>
+        </div>
+        <div id="r-warning"></div>
+        <details class="breakdown">
+          <summary>구간별 상세 내역 보기</summary>
+          <div class="table-scroll"><table id="range-table"><thead><tr><th>구간</th><th>맵</th><th>행동 횟수</th><th>소요 시간</th></tr></thead><tbody></tbody></table></div>
+        </details>
+      </div>
+
+    </div>
+
+    <div class="side">
+
+      <div class="card">
+        <h2>프리셋</h2>
+        <p class="hint">공식과 아래 메모를 함께 저장해요. 예: "목공 5→10렙용 / 헴록 판자로 레벨업". 맵 정보는 아직 프리셋에 포함되지 않아요 (추후 지원 예정). 파일로 내보내면 다른 기기에서도 불러올 수 있어요.</p>
+        <div class="preset-list" id="preset-list"></div>
+        <div class="save-row"><input type="text" id="preset-name" placeholder="프리셋 이름 (예: 1회차)" /><button class="primary" id="btn-save-preset">저장</button></div>
+        <div class="btn-row">
+          <button id="btn-export">내보내기 (JSON)</button>
+          <button id="btn-import-trigger">가져오기</button>
+          <input type="file" id="file-import" class="file-import" accept="application/json" />
+        </div>
+        <div class="autosave-note">현재 설정은 이 브라우저에 자동 저장돼요.</div>
+      </div>
+
+      <div class="card">
+        <h2>메모</h2>
+        <p class="hint">이 메모는 프리셋을 저장할 때 함께 저장돼요. 프리셋을 불러오면 그때 저장된 메모로 바뀝니다.</p>
+        <textarea id="notes" placeholder="예: 목공 5→10렙용 / 헴록 판자로 레벨업"></textarea>
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer class="foot">
+    성장 공식은 실측 데이터 회귀 분석으로 추정된 값이라 실제 게임 값과 ±1 수준의 오차가 있을 수 있어요. 포션/가면 보너스, 맵 언락 조건이 바뀌면 위 값을 직접 수정하세요.
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'idleIktahCalcState_v2';
+  const POTION_SECONDS = 5 * 60;
+  const el = (id) => document.getElementById(id);
+
+  let state = {
+    base: 63.5, growth: 10.41, maxLevel: 99,
+    usePotion: false, useMask: false,
+    real: 1, progress: 0, target: 10, curTime: null,
+    mCurName: '현재 맵', mCurUnlock: 1, mCurExp: 10, mCurTime: 5, mCurUnit: 1,
+    mNextName: '', mNextUnlock: null, mNextExp: null, mNextTime: null, mNextUnit: 1,
+    notes: '',
+    presets: [ { id: 'default', name: '기본(추정값)', base: 63.5, growth: 10.41, maxLevel: 99, memo: '' } ]
+  };
+
+  function loadFromStorage(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      state = Object.assign({}, state, saved);
+      if (!Array.isArray(state.presets) || state.presets.length === 0) {
+        state.presets = [{ id:'default', name:'기본(추정값)', base:63.5, growth:10.41, maxLevel:99, memo:'' }];
+      }
+      state.presets.forEach(p => { if (typeof p.memo !== 'string') p.memo = ''; });
+    } catch(e) { /* 저장된 값 없음 - 기본값 사용 */ }
+  }
+  function saveToStorage(){ try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){} }
+
+  const fields = {
+    base: el('f-base'), growth: el('f-growth'), maxLevel: el('f-maxlevel'),
+    potUse: el('pot-use'), potMask: el('pot-mask'),
+    real: el('l-real'), display: el('l-display'), progress: el('l-progress'), target: el('l-target'), nowTime: el('cur-time'),
+    curName: el('m-cur-name'), curUnlock: el('m-cur-unlock'), curExp: el('m-cur-exp'), curTime: el('m-cur-time'), curUnit: el('m-cur-unit'),
+    nextName: el('m-next-name'), nextUnlock: el('m-next-unlock'), nextExp: el('m-next-exp'), nextTime: el('m-next-time'), nextUnit: el('m-next-unit'),
+    notes: el('notes'), presetName: el('preset-name')
+  };
+
+  function getBonus(){ return state.usePotion ? (state.useMask ? 8 : 4) : 0; }
+
+  function syncFieldsFromState(){
+    fields.base.value = state.base;
+    fields.growth.value = state.growth;
+    fields.maxLevel.value = state.maxLevel;
+    fields.potUse.checked = !!state.usePotion;
+    fields.potMask.checked = !!state.useMask;
+    fields.real.value = state.real;
+    fields.progress.value = state.progress;
+    fields.target.value = state.target;
+    fields.nowTime.value = state.curTime || '';
+    fields.curName.value = state.mCurName;
+    fields.curUnlock.value = state.mCurUnlock;
+    fields.curExp.value = state.mCurExp;
+    fields.curTime.value = state.mCurTime;
+    fields.curUnit.value = state.mCurUnit;
+    fields.nextName.value = state.mNextName || '';
+    fields.nextUnlock.value = state.mNextUnlock === null || state.mNextUnlock === undefined ? '' : state.mNextUnlock;
+    fields.nextExp.value = state.mNextExp === null || state.mNextExp === undefined ? '' : state.mNextExp;
+    fields.nextTime.value = state.mNextTime === null || state.mNextTime === undefined ? '' : state.mNextTime;
+    fields.nextUnit.value = state.mNextUnit;
+    fields.notes.value = state.notes || '';
+    updateDisplayFieldUI();
+  }
+
+  function updateDisplayFieldUI(){
+    const bonus = getBonus();
+    el('pot-bonus-readout').textContent = '현재 보너스: +' + bonus;
+    fields.potMask.disabled = !state.usePotion;
+    if (bonus > 0){
+      fields.display.disabled = false;
+      fields.display.value = state.real + bonus;
+    } else {
+      fields.display.disabled = true;
+      fields.display.value = state.real;
+    }
+  }
+
+  function numOrNull(v){
+    if (v === '' || v === null || v === undefined) return null;
+    const n = parseFloat(v);
+    return isNaN(n) ? null : n;
+  }
+
+  function readFieldsIntoState(){
+    state.base = parseFloat(fields.base.value) || 0;
+    state.growth = parseFloat(fields.growth.value) || 0;
+    state.maxLevel = Math.max(1, Math.floor(parseFloat(fields.maxLevel.value) || 1));
+    state.usePotion = fields.potUse.checked;
+    state.useMask = fields.potMask.checked;
+    state.real = Math.max(1, Math.floor(parseFloat(fields.real.value) || 1));
+    state.progress = Math.max(0, parseFloat(fields.progress.value) || 0);
+    state.target = Math.max(1, Math.floor(parseFloat(fields.target.value) || 1));
+    state.curTime = fields.nowTime.value || null;
+    state.mCurName = fields.curName.value || '현재 맵';
+    state.mCurUnlock = parseFloat(fields.curUnlock.value) || 1;
+    state.mCurExp = parseFloat(fields.curExp.value) || 0;
+    state.mCurTime = parseFloat(fields.curTime.value) || 0;
+    state.mCurUnit = parseFloat(fields.curUnit.value) || 1;
+    state.mNextName = fields.nextName.value || '';
+    state.mNextUnlock = numOrNull(fields.nextUnlock.value);
+    state.mNextExp = numOrNull(fields.nextExp.value);
+    state.mNextTime = numOrNull(fields.nextTime.value);
+    state.mNextUnit = parseFloat(fields.nextUnit.value) || 1;
+    state.notes = fields.notes.value;
+  }
+
+  // 실질레벨 <-> 표시레벨 동기화
+  fields.real.addEventListener('input', () => {
+    readFieldsIntoState();
+    updateDisplayFieldUI();
+    refreshAll();
+  });
+  fields.display.addEventListener('input', () => {
+    const bonus = getBonus();
+    if (bonus <= 0) return;
+    const disp = Math.floor(parseFloat(fields.display.value) || 0);
+    state.real = Math.max(1, disp - bonus);
+    fields.real.value = state.real;
+    refreshAll();
+  });
+  [fields.potUse, fields.potMask].forEach(cb => {
+    cb.addEventListener('change', () => {
+      readFieldsIntoState();
+      updateDisplayFieldUI();
+      refreshAll();
+    });
+  });
+
+  function nowLocalInputValue(){
+    const d = new Date();
+    d.setSeconds(0,0);
+    const tzOffsetMs = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffsetMs).toISOString().slice(0,16);
+  }
+
+  function formatFinishAt(startStr, seconds){
+    if (!startStr || !isFinite(seconds)) return null;
+    const start = new Date(startStr);
+    if (isNaN(start.getTime())) return null;
+    const end = new Date(start.getTime() + seconds*1000);
+    return end.toLocaleString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit', weekday:'short', hour:'2-digit', minute:'2-digit' });
+  }
+
+  function requiredExp(n, base, growthPct){ return Math.round(base * Math.pow(1 + growthPct/100, n-1)); }
+  function fmtInt(n){ return Math.round(n).toLocaleString('ko-KR'); }
+
+  function formatDuration(totalSeconds){
+    if (!isFinite(totalSeconds)) return '계산 불가';
+    if (totalSeconds <= 0) return '0초';
+    let s = Math.round(totalSeconds);
+    const day=86400, hour=3600, minute=60;
+    const days=Math.floor(s/day); s-=days*day;
+    const hours=Math.floor(s/hour); s-=hours*hour;
+    const minutes=Math.floor(s/minute); s-=minutes*minute;
+    const seconds=s;
+    const parts=[];
+    if (days>0) parts.push(days+'일');
+    if (hours>0) parts.push(hours+'시간');
+    if (minutes>0 && days===0) parts.push(minutes+'분');
+    if (seconds>0 && days===0 && hours===0) parts.push(seconds+'초');
+    if (parts.length===0) parts.push('0초');
+    return parts.slice(0,3).join(' ');
+  }
+
+  function renderFormulaPreview(){
+    const tbody = document.querySelector('#formula-preview-table tbody');
+    tbody.innerHTML = '';
+    const maxShow = Math.min(state.maxLevel, 15);
+    for (let n=1; n<=maxShow; n++){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>Lv.${n}</td><td>${fmtInt(requiredExp(n, state.base, state.growth))}</td>`;
+      tbody.appendChild(tr);
+    }
+  }
+
+  function levelExpList(currentReal, progress, targetReal, base, growth){
+    const list = [];
+    for (let n=currentReal; n<targetReal; n++){
+      const need = requiredExp(n, base, growth);
+      const remain = Math.max(0, need - (n===currentReal ? progress : 0));
+      list.push({ level:n, need, remain });
+    }
+    return list;
+  }
+
+  // tiers: [{name, unlock, exp, time, unit}], sorted ascending by unlock
+  function simulateFarm(levelList, bonus, tiers, forceFirstOnly){
+    let totalActions=0, totalTime=0, potionTime=0;
+    const segments = []; let curSeg = null;
+    levelList.forEach(({level:n, remain}) => {
+      let tier = tiers[0];
+      if (!forceFirstOnly){
+        tiers.forEach(t => { if (t.unlock <= n + bonus) tier = t; });
+      }
+      const actions = tier.exp > 0 ? Math.ceil(remain / tier.exp) : 0;
+      const timeSec = actions * tier.time * tier.unit;
+      const potionFlag = tier.unlock > n;
+      totalActions += actions; totalTime += timeSec;
+      if (potionFlag) potionTime += timeSec;
+      if (!curSeg || curSeg.tierName !== tier.name){
+        if (curSeg) segments.push(curSeg);
+        curSeg = { tierName: tier.name, from:n, to:n+1, actions, time:timeSec };
+      } else {
+        curSeg.to = n+1; curSeg.actions += actions; curSeg.time += timeSec;
+      }
+    });
+    if (curSeg) segments.push(curSeg);
+    return { totalActions, totalTime, potionTime, segments };
+  }
+
+  function isUsable(map){ return !!map && map.exp !== null && map.time !== null && isFinite(map.exp) && map.exp > 0 && isFinite(map.time) && map.time >= 0; }
+
+  // 다음 맵 이동까지 (목표 레벨과 무관하게 독립 계산)
+  function renderNextMap(){
+    const { real, progress, maxLevel, base, growth } = state;
+    const bonus = getBonus();
+    const setP = (value, cls, finish, sub) => {
+      el('n-time').textContent = value;
+      el('n-time').className = 'value' + (cls ? ' ' + cls : '');
+      el('n-finish').textContent = finish || '';
+      el('n-sub').textContent = sub || '';
+    };
+    const nextDefined = state.mNextUnlock !== null && isFinite(state.mNextUnlock);
+    if (!nextDefined){
+      el('n-label').textContent = '다음 맵 이동까지 예상 소요 시간';
+      setP('-', '', '', '다음 맵의 언락 표시레벨을 입력하면 계산돼요.');
+      return;
+    }
+    const nextName = state.mNextName || '다음 맵';
+    el('n-label').textContent = `${nextName} 이동까지 예상 소요 시간`;
+    const nextOpenReal = state.mNextUnlock - bonus;
+    const info = `표시 Lv.${state.mNextUnlock} = 실질 Lv.${nextOpenReal} (보너스 +${bonus} 기준)`;
+    if (nextOpenReal <= real){ setP('이미 열려있어요', 'done', '', info); return; }
+    if (nextOpenReal > maxLevel){ setP('도달 불가', 'warn', '', `최대 레벨(${maxLevel})보다 높은 지점이에요.\n` + info); return; }
+    const curMap = { name: state.mCurName || '현재 맵', unlock: state.mCurUnlock, exp: state.mCurExp, time: state.mCurTime, unit: state.mCurUnit };
+    if (!isUsable(curMap)){ setP('-', '', '', "현재 맵의 '1회당 경험치'와 '1회당 소요시간'을 입력해주세요."); return; }
+
+    const sim = simulateFarm(levelExpList(real, progress, nextOpenReal, base, growth), bonus, [curMap], true);
+    const finishAt = formatFinishAt(state.curTime, sim.totalTime);
+    let sub = `실질 Lv.${real} → Lv.${nextOpenReal} · ${fmtInt(sim.totalActions)}회\n${info}`;
+
+    // 다음 맵 정보가 완전하면, 이동 이후 목표까지 추가 시간도 안내
+    const nextMap = { name: nextName, unlock: state.mNextUnlock, exp: state.mNextExp, time: state.mNextTime, unit: state.mNextUnit };
+    const effTarget = Math.min(state.target, maxLevel);
+    if (isUsable(nextMap) && effTarget > nextOpenReal){
+      const tiers = [curMap, nextMap].sort((a,b) => a.unlock - b.unlock);
+      const full = simulateFarm(levelExpList(real, progress, effTarget, base, growth), bonus, tiers, false);
+      sub += `\n이동 후 목표까지 추가 ${formatDuration(full.totalTime - sim.totalTime)}`;
+    } else if (effTarget <= nextOpenReal){
+      sub += '\n(목표 레벨 이후에 열리는 지점이에요)';
+    }
+    setP(formatDuration(sim.totalTime), '', finishAt ? `도달 예상 시각: ${finishAt}` : '', sub);
+  }
+
+  function calculate(){
+    const warnBox = el('r-warning');
+    warnBox.innerHTML = '';
+    const { real, progress, target, maxLevel, base, growth } = state;
+    const bonus = getBonus();
+
+    renderNextMap();
+
+    if (target > maxLevel){
+      warnBox.innerHTML = `<div class="msg warn">목표 레벨(${target})이 최대 레벨(${maxLevel})을 초과했어요.</div>`;
+    }
+    if (target <= real){
+      el('r-time-label').textContent = '목표 레벨까지 예상 소요 시간';
+      el('r-time').textContent = '이미 도달함';
+      el('r-time').className = 'value done';
+      el('r-time-sub').textContent = '';
+      el('r-time-finish').textContent = '';
+      el('r-totalexp').textContent = '-';
+      el('r-remainexp').textContent = '0';
+      el('r-runs').textContent = '0';
+      el('r-potion-switch').textContent = '-';
+      el('r-potion-noswitch').textContent = '-';
+      document.querySelector('#range-table tbody').innerHTML = '';
+      return;
+    }
+
+    const effectiveTarget = Math.min(target, maxLevel);
+    const levelList = levelExpList(real, progress, effectiveTarget, base, growth);
+    const totalExpRaw = levelList.reduce((s,l)=>s+l.need, 0);
+    const remainExp = levelList.reduce((s,l)=>s+l.remain, 0);
+    el('r-totalexp').textContent = fmtInt(totalExpRaw);
+    el('r-remainexp').textContent = fmtInt(remainExp);
+
+    const curMap = { name: state.mCurName || '현재 맵', unlock: state.mCurUnlock, exp: state.mCurExp, time: state.mCurTime, unit: state.mCurUnit };
+    const nextMapDefined = state.mNextUnlock !== null && isFinite(state.mNextUnlock);
+    const nextMap = nextMapDefined ? { name: state.mNextName || '다음 맵', unlock: state.mNextUnlock, exp: state.mNextExp, time: state.mNextTime, unit: state.mNextUnit } : null;
+
+    if (!isUsable(curMap)){
+      warnBox.innerHTML += `<div class="msg warn">현재 맵의 '1회당 경험치'와 '1회당 소요시간'을 입력해주세요.</div>`;
+      el('r-time').textContent = '-'; el('r-time').className='value'; el('r-time-sub').textContent=''; el('r-time-finish').textContent='';
+      el('r-runs').textContent = '-'; el('r-potion-switch').textContent='-'; el('r-potion-noswitch').textContent='-';
+      document.querySelector('#range-table tbody').innerHTML = '';
+      return;
+    }
+
+    // 이동 안 할 시 (현재 맵만 계속 사용)
+    const noSwitch = simulateFarm(levelList, bonus, [curMap], true);
+    const potionsNoSwitch = Math.ceil(noSwitch.potionTime / POTION_SECONDS);
+
+    // 이동 시 (다음 맵 정보가 완전할 때만 전체 시뮬레이션)
+    const nextUsable = nextMapDefined && isUsable(nextMap);
+    let fullSim = null;
+    if (nextUsable){
+      const tiers = [curMap, nextMap].sort((a,b)=>a.unlock-b.unlock);
+      fullSim = simulateFarm(levelList, bonus, tiers, false);
+    }
+
+    // 포션 계산용: 다음 맵의 비어있는 값(경험치/소요시간)은 현재 맵 수치로 대신 채워서 추정
+    let potionsSwitch = null, potionEstimated = false;
+    if (nextMapDefined){
+      const hasExp = nextMap.exp !== null && isFinite(nextMap.exp) && nextMap.exp > 0;
+      const hasTime = nextMap.time !== null && isFinite(nextMap.time) && nextMap.time >= 0;
+      const nextEst = {
+        name: nextMap.name, unlock: nextMap.unlock,
+        exp: hasExp ? nextMap.exp : curMap.exp,
+        time: hasTime ? nextMap.time : curMap.time,
+        unit: hasTime ? nextMap.unit : curMap.unit
+      };
+      potionEstimated = !(hasExp && hasTime);
+      const potionSim = simulateFarm(levelList, bonus, [curMap, nextEst].sort((a,b)=>a.unlock-b.unlock), false);
+      potionsSwitch = Math.ceil(potionSim.potionTime / POTION_SECONDS);
+    }
+    const noPotionNote = bonus === 0 ? ' (포션 미사용 상태)' : '';
+
+    el('r-runs').textContent = fmtInt(noSwitch.totalActions) + '회 (이동 안 할 시 기준)';
+    el('r-potion-noswitch').textContent = potionsNoSwitch + '개' + (potionsNoSwitch === 0 ? noPotionNote : '');
+    el('r-potion-switch').textContent = potionsSwitch === null
+      ? '다음 맵 언락레벨 필요'
+      : potionsSwitch + '개' + (potionEstimated ? ' (현재 맵 수치로 추정)' : '') + (potionsSwitch === 0 ? noPotionNote : '');
+
+    let heroResult, heroLabel, heroSub;
+    const rangeTbody = document.querySelector('#range-table tbody');
+    rangeTbody.innerHTML = '';
+
+    if (fullSim){
+      heroResult = fullSim.totalTime;
+      heroLabel = '목표 레벨까지 예상 소요 시간 (맵 이동 전략)';
+      heroSub = `이동 안 할 시: ${formatDuration(noSwitch.totalTime)} · 필요 행동: ${fmtInt(fullSim.totalActions)}회`;
+      el('r-runs').textContent = fmtInt(fullSim.totalActions) + '회 (맵 이동 전략 기준)';
+      fullSim.segments.forEach(seg => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>Lv.${seg.from} → Lv.${seg.to}</td><td>${seg.tierName}</td><td>${fmtInt(seg.actions)}회</td><td>${formatDuration(seg.time)}</td>`;
+        rangeTbody.appendChild(tr);
+      });
+    } else {
+      heroResult = noSwitch.totalTime;
+      heroLabel = '목표 레벨까지 예상 소요 시간 (현재 맵 기준)';
+      heroSub = '';
+      noSwitch.segments.forEach(seg => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>Lv.${seg.from} → Lv.${seg.to}</td><td>${seg.tierName}</td><td>${fmtInt(seg.actions)}회</td><td>${formatDuration(seg.time)}</td>`;
+        rangeTbody.appendChild(tr);
+      });
+    }
+
+    el('r-time-label').textContent = heroLabel;
+    el('r-time').textContent = formatDuration(heroResult);
+    el('r-time').className = 'value';
+    el('r-time-sub').textContent = heroSub;
+    const finishAt = formatFinishAt(state.curTime, heroResult);
+    el('r-time-finish').textContent = finishAt ? `완료 예상 시각: ${finishAt}` : '';
+  }
+
+  function renderPresets(){
+    const list = el('preset-list');
+    list.innerHTML = '';
+    if (!state.presets.length){ list.innerHTML = '<div class="preset-empty">저장된 프리셋이 없어요.</div>'; return; }
+    state.presets.forEach(p => {
+      const isActive = p.base === state.base && p.growth === state.growth && p.maxLevel === state.maxLevel;
+      const item = document.createElement('div');
+      item.className = 'preset-item' + (isActive ? ' active' : '');
+      const memoLine = p.memo && p.memo.trim() ? `<div class="preset-memo">${escapeHtml(p.memo.trim().split('\n')[0])}</div>` : '';
+      item.innerHTML = `
+        <div>
+          <div class="name">${escapeHtml(p.name)}</div>
+          <div class="meta">기준 ${p.base} · 성장률 ${p.growth}% · 최대 Lv.${p.maxLevel}</div>
+          ${memoLine}
+        </div>
+        <div class="actions">
+          <button data-action="load" data-id="${p.id}">불러오기</button>
+          <button data-action="delete" data-id="${p.id}">삭제</button>
+        </div>`;
+      list.appendChild(item);
+    });
+  }
+
+  function escapeHtml(str){ const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
+
+  function refreshAll(){
+    renderFormulaPreview();
+    calculate();
+    renderPresets();
+    saveToStorage();
+  }
+
+  ['f-base','f-growth','f-maxlevel'].forEach(id => el(id).addEventListener('input', () => { readFieldsIntoState(); refreshAll(); }));
+  ['l-progress','l-target','cur-time'].forEach(id => el(id).addEventListener('input', () => { readFieldsIntoState(); refreshAll(); }));
+  ['m-cur-name','m-cur-unlock','m-cur-exp','m-cur-time','m-next-name','m-next-unlock','m-next-exp','m-next-time'].forEach(id => el(id).addEventListener('input', () => { readFieldsIntoState(); refreshAll(); }));
+  ['m-cur-unit','m-next-unit'].forEach(id => el(id).addEventListener('change', () => { readFieldsIntoState(); refreshAll(); }));
+  el('notes').addEventListener('input', () => { readFieldsIntoState(); saveToStorage(); });
+
+  el('btn-save-preset').addEventListener('click', () => {
+    readFieldsIntoState();
+    const name = fields.presetName.value.trim();
+    if (!name){ fields.presetName.focus(); return; }
+    const existing = state.presets.find(p => p.name === name);
+    if (existing){
+      const ok = confirm(`'${name}' 프리셋이 이미 있어요. 현재 공식과 메모로 덮어쓸까요?`);
+      if (!ok) return;
+      existing.base = state.base; existing.growth = state.growth; existing.maxLevel = state.maxLevel; existing.memo = state.notes;
+    } else {
+      state.presets.push({ id:'p_'+Date.now(), name, base:state.base, growth:state.growth, maxLevel:state.maxLevel, memo:state.notes });
+    }
+    fields.presetName.value = '';
+    refreshAll();
+  });
+
+  el('preset-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    const id = btn.getAttribute('data-id'); const action = btn.getAttribute('data-action');
+    const preset = state.presets.find(p => p.id === id); if (!preset) return;
+    if (action === 'load'){
+      state.base = preset.base; state.growth = preset.growth; state.maxLevel = preset.maxLevel; state.notes = preset.memo || '';
+      fields.presetName.value = preset.name;
+      syncFieldsFromState(); refreshAll();
+    } else if (action === 'delete'){
+      state.presets = state.presets.filter(p => p.id !== id); refreshAll();
+    }
+  });
+
+  el('btn-export').addEventListener('click', () => {
+    readFieldsIntoState();
+    const payload = { exportedAt: new Date().toISOString(), presets: state.presets, notes: state.notes };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'idle-iktah-presets.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  });
+
+  el('btn-import-trigger').addEventListener('click', () => el('file-import').click());
+  el('file-import').addEventListener('change', (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (Array.isArray(data.presets)){
+          const existingIds = new Set(state.presets.map(p => p.id));
+          data.presets.forEach(p => {
+            if (!p || typeof p.base !== 'number' || typeof p.growth !== 'number') return;
+            if (existingIds.has(p.id)) p.id = 'p_' + Date.now() + Math.random().toString(16).slice(2);
+            if (typeof p.memo !== 'string') p.memo = '';
+            state.presets.push(p);
+          });
+        }
+        if (typeof data.notes === 'string' && data.notes.trim() && !state.notes.trim()) state.notes = data.notes;
+        syncFieldsFromState(); refreshAll();
+      } catch(err){ alert('파일을 읽을 수 없어요. 올바른 JSON 파일인지 확인해주세요.'); }
+      el('file-import').value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  loadFromStorage();
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(state.curTime || '')) state.curTime = nowLocalInputValue();
+  el('btn-now').addEventListener('click', () => {
+    fields.nowTime.value = nowLocalInputValue();
+    readFieldsIntoState(); refreshAll();
+  });
+  syncFieldsFromState();
+  refreshAll();
+})();
+</script>
+</body>
+</html>
