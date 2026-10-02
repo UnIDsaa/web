@@ -236,6 +236,13 @@
           <summary>구간별 상세 내역 보기</summary>
           <div class="table-scroll"><table id="range-table"><thead><tr><th>구간</th><th>맵</th><th>행동 횟수</th><th>소요 시간</th></tr></thead><tbody></tbody></table></div>
         </details>
+        <h3>스냅샷</h3>
+        <div class="btn-row">
+          <button type="button" id="btn-snap-text">텍스트 복사</button>
+          <button type="button" id="btn-snap-png">PNG 저장</button>
+          <button type="button" id="btn-snap-copy">PNG 복사</button>
+          <span id="snap-status" class="hint" style="margin:0 0 0 4px;"></span>
+        </div>
       </div>
 
     </div>
@@ -737,6 +744,125 @@
       el('file-import').value = '';
     };
     reader.readAsText(file);
+  });
+
+  // ===== 스냅샷 (텍스트 / PNG) =====
+  function buildSnapshot(){
+    readFieldsIntoState();
+    const t = id => (el(id).textContent || '').trim();
+    const num = v => (v === null || v === undefined || !isFinite(v)) ? '-' : fmtInt(v);
+    const bonus = getBonus();
+    const secPerRun = Number(state.mCurTime) * (Number(state.mCurUnit) || 1);
+    const timeLabel = t('r-time-label');
+    const rows = [];
+    rows.push({ label:'레벨', value:`Lv.${state.real} → Lv.${state.target}` + (state.progress ? ` (현재 레벨 진행 ${num(state.progress)} XP)` : '') });
+    rows.push({ label:'필요 경험치', value:`총 ${t('r-totalexp')} / 남은 ${t('r-remainexp')}` });
+    rows.push({ label: state.mCurName || '현재 맵', value:`1회 ${num(state.mCurExp)} XP · ${isFinite(secPerRun) ? formatDuration(secPerRun) : '-'}` });
+    rows.push({ label:'포션 · 가면', value: state.usePotion ? `스킬 포션 사용${state.useMask ? ' + 연금술사의 가면' : ''} (+${bonus}, 표시 Lv.${state.real + bonus})` : '스킬 포션 미사용' });
+    if (state.usePotion){
+      const np = t('r-potion-noswitch'), sw = t('r-potion-switch');
+      const hasNext = state.mNextUnlock !== null && isFinite(state.mNextUnlock) && /개/.test(sw);
+      rows.push({ label:'필요 포션', value: hasNext ? `이동 안 할 시 ${np} · 이동 시 ${sw}` : np });
+    }
+    if (state.mNextUnlock !== null && isFinite(state.mNextUnlock) && t('n-time') !== '-'){
+      rows.push({ label:'다음 맵 이동', value:`${state.mNextName || '다음 맵'}(표시 Lv.${state.mNextUnlock})까지 ${t('n-time')}` });
+    }
+    rows.push({ label:'필요 횟수', value:t('r-runs') });
+    rows.push({ label:'소요 시간', value:t('r-time') + (/맵 이동 전략/.test(timeLabel) ? ' (맵 이동 전략)' : ''), hi:true });
+    const start = formatFinishAt(state.curTime, 0);
+    if (start) rows.push({ label:'시작 시각', value:start });
+    const fin = t('r-time-finish').replace(/^완료 예상 시각:\s*/, '');
+    if (fin) rows.push({ label:'완료 예상', value:fin, hi:true });
+    return { memo:(state.notes || '').trim(), rows, name:(state.mCurName || 'snapshot') };
+  }
+
+  function snapshotText(snap){
+    const body = snap.rows.map(r => `${r.label}: ${r.value}`).join('\n');
+    return (snap.memo ? snap.memo + '\n\n' : '') + body;
+  }
+
+  async function renderSnapshotCanvas(snap){
+    try { await document.fonts.ready; } catch(e){}
+    const S = 2, W = 760, P = 32, LW = 150;
+    const FONT = "'Manrope','Noto Sans KR','Malgun Gothic',system-ui,sans-serif";
+    const memoFont = `500 15px ${FONT}`, valFont = `700 18px ${FONT}`, labFont = `500 14px ${FONT}`;
+    const c = document.createElement('canvas');
+    const g = c.getContext('2d');
+    const innerW = W - P*2;
+    const wrap = (txt, font, maxW) => {
+      g.font = font; const out = [];
+      String(txt).split('\n').forEach(par => {
+        let line = '';
+        for (const ch of par){
+          if (g.measureText(line + ch).width > maxW && line){ out.push(line); line = ch; } else line += ch;
+        }
+        out.push(line);
+      });
+      return out;
+    };
+    const memoLines = snap.memo ? wrap(snap.memo, memoFont, innerW - 30) : [];
+    const memoH = memoLines.length ? memoLines.length * 22 + 28 : 0;
+    const rows = snap.rows.map(r => Object.assign({}, r, { lines: wrap(r.value, valFont, innerW - LW) }));
+    const rowH = r => r.lines.length * 26 + 16;
+    const H = P*2 + (memoH ? memoH + 16 : 0) + rows.reduce((a, r) => a + rowH(r), 0);
+    c.width = W * S; c.height = H * S;
+    g.scale(S, S);
+    g.fillStyle = '#14171f'; g.fillRect(0, 0, W, H);
+    g.textBaseline = 'top';
+    let y = P;
+    if (memoH){
+      g.fillStyle = '#1b1f2a'; g.fillRect(P, y, innerW, memoH);
+      g.fillStyle = '#e0a63e'; g.fillRect(P, y, 4, memoH);
+      g.fillStyle = '#eae7dd'; g.font = memoFont;
+      memoLines.forEach((ln, i) => g.fillText(ln, P + 18, y + 14 + i * 22));
+      y += memoH + 16;
+    }
+    rows.forEach(r => {
+      g.strokeStyle = '#2d3346'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(P, y + 0.5); g.lineTo(P + innerW, y + 0.5); g.stroke();
+      g.fillStyle = '#9aa0b8'; g.font = labFont; g.fillText(r.label, P, y + 12);
+      g.fillStyle = r.hi ? '#f2c469' : '#eae7dd'; g.font = valFont;
+      r.lines.forEach((ln, j) => g.fillText(ln, P + LW, y + 9 + j * 26));
+      y += rowH(r);
+    });
+    return c;
+  }
+
+  function canvasToBlob(c){ return new Promise(res => c.toBlob(res, 'image/png')); }
+  let snapTimer = null;
+  function snapStatus(msg){
+    const n = el('snap-status'); n.textContent = msg;
+    clearTimeout(snapTimer); snapTimer = setTimeout(() => { n.textContent = ''; }, 2500);
+  }
+  function fileStamp(){
+    const d = new Date(), p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  }
+
+  el('btn-snap-text').addEventListener('click', async () => {
+    const txt = snapshotText(buildSnapshot());
+    try { await navigator.clipboard.writeText(txt); snapStatus('텍스트를 복사했어요'); }
+    catch(e){
+      const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); snapStatus('텍스트를 복사했어요'); } catch(err){ snapStatus('복사에 실패했어요'); }
+      document.body.removeChild(ta);
+    }
+  });
+  el('btn-snap-png').addEventListener('click', async () => {
+    const snap = buildSnapshot();
+    const blob = await canvasToBlob(await renderSnapshotCanvas(snap));
+    const safeName = snap.name.replace(/[\\/:*?"<>|]/g, '').trim() || 'snapshot';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `idle-iktah_${safeName}_${fileStamp()}.png`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    snapStatus('PNG를 저장했어요');
+  });
+  el('btn-snap-copy').addEventListener('click', async () => {
+    try {
+      const blob = await canvasToBlob(await renderSnapshotCanvas(buildSnapshot()));
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      snapStatus('이미지를 복사했어요');
+    } catch(e){ snapStatus('이미지 복사가 지원되지 않아요. PNG 저장을 사용해 주세요'); }
   });
 
   loadFromStorage();
